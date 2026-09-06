@@ -849,21 +849,21 @@ PROFILES: dict[str, dict[str, Any]] = {
         "scan": {
             "record_types": [
                 "A",
-                    "AAAA",
-                    "CNAME",
-                    "MX",
-                    "NS",
-                    "TXT",
-                    "SOA",
-                    "CAA",
-                    "PTR",
-                    "SRV",
-                    "NAPTR",
-                    "DNAME",
-                    "TLSA",
-                    "SSHFP",
-                    "LOC",
-                    "SVCB",
+                "AAAA",
+                "CNAME",
+                "MX",
+                "NS",
+                "TXT",
+                "SOA",
+                "CAA",
+                "PTR",
+                "SRV",
+                "NAPTR",
+                "DNAME",
+                "TLSA",
+                "SSHFP",
+                "LOC",
+                "SVCB",
                 "HTTPS",
             ],
             "dnssec": True,
@@ -1142,7 +1142,8 @@ def write_example_config(path: str | Path) -> Path:
         target.write_text(template.read_text(encoding="utf-8"), encoding="utf-8")
     else:  # pragma: no cover - only when running from an sdist without the file
         target.write_text(
-            "# DNScope example configuration\n" + yaml.safe_dump(default_config().redacted_dict(), sort_keys=True),
+            "# DNScope example configuration\n"
+            + yaml.safe_dump(default_config().redacted_dict(), sort_keys=True),
             encoding="utf-8",
         )
     return target

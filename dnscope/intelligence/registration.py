@@ -209,9 +209,7 @@ class RegistrationData(SchemaVersioned):
                 }
             )
         drift = self.nameserver_drift()
-        if self.nameservers and self.observed_nameservers and (
-            drift["registry_only"] or drift["dns_only"]
-        ):
+        if self.nameservers and self.observed_nameservers and (drift["registry_only"] or drift["dns_only"]):
             issues.append(
                 {
                     "id": "REG-NS-DRIFT",

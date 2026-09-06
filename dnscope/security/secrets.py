@@ -28,7 +28,9 @@ from dnscope.utils.redact import mask_secret
 _log = get_logger("secrets")
 
 #: Default location of the encrypted secret store.
-DEFAULT_SECRET_FILE = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "dnscope" / "secrets.enc"
+DEFAULT_SECRET_FILE = (
+    Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")) / "dnscope" / "secrets.enc"
+)
 #: Environment variable holding the master key (or the path to a key file).
 MASTER_KEY_ENV = "DNSCOPE_MASTER_KEY"
 #: Optional keyring service name.
@@ -249,9 +251,7 @@ class SecretStore:
         """Write ``name`` into the encrypted store (requires a master key)."""
         key = _load_master_key()
         if key is None:
-            raise SecurityPolicyViolation(
-                f"{MASTER_KEY_ENV} must be set to write the encrypted secret store"
-            )
+            raise SecurityPolicyViolation(f"{MASTER_KEY_ENV} must be set to write the encrypted secret store")
         from cryptography.fernet import Fernet
 
         data = self._file_data()

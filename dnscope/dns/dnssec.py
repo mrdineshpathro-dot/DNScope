@@ -166,9 +166,7 @@ class DNSSECAnalyzer:
             analysis.status = DNSSECStatus.UNSIGNED
         else:
             analysis.status = DNSSECStatus.UNKNOWN
-        analysis.confidence = (
-            Confidence.HIGH.value if (has_keys or has_ds) else Confidence.MEDIUM.value
-        )
+        analysis.confidence = Confidence.HIGH.value if (has_keys or has_ds) else Confidence.MEDIUM.value
 
     def _analyze_rrsig(self, rrsig: DNSQueryResult, analysis: DNSSECAnalysis) -> None:
         """Record covered types and detect expired signatures."""
@@ -180,11 +178,7 @@ class DNSSECAnalyzer:
             if covered and covered not in analysis.rrsig_types:
                 analysis.rrsig_types.append(covered)
             expiration = parse_timestamp(str(parsed.get("expiration", "")))
-            if (
-                expiration is not None
-                and expiration < now_utc()
-                and covered not in analysis.rrsig_expired
-            ):
+            if expiration is not None and expiration < now_utc() and covered not in analysis.rrsig_expired:
                 analysis.rrsig_expired.append(covered)
 
     def _find_issues(self, analysis: DNSSECAnalysis) -> None:
@@ -220,8 +214,7 @@ class DNSSECAnalyzer:
                         "id": "DNSSEC-KEYSIZE-001",
                         "severity": "LOW",
                         "detail": (
-                            f"small RSA key observed: {key.key_size_bits} bits "
-                            f"(role={key.role or 'unknown'})"
+                            f"small RSA key observed: {key.key_size_bits} bits (role={key.role or 'unknown'})"
                         ),
                     }
                 )

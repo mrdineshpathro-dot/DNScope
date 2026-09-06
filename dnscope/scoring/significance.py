@@ -206,20 +206,29 @@ def _rule_spf_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str,
             return Significance.MEDIUM.value, "an SPF record was published"
         return Significance.LOW.value, "SPF presence changed"
     if field_name == "spf_includes":
-        before = {str(item) for item in _as_list(change.previous)}
-        after = {str(item) for item in _as_list(change.current)}
-        if before and not after:
+        prior_includes = {str(item) for item in _as_list(change.previous)}
+        current_includes = {str(item) for item in _as_list(change.current)}
+        if prior_includes and not current_includes:
             return Significance.HIGH.value, "every SPF include was removed"
-        if after - before:
-            return Significance.MEDIUM.value, f"SPF include added ({', '.join(sorted(after - before))})"
-        if before - after:
-            return Significance.LOW.value, f"SPF include removed ({', '.join(sorted(before - after))})"
+        if current_includes - prior_includes:
+            added = ", ".join(sorted(current_includes - prior_includes))
+            return Significance.MEDIUM.value, f"SPF include added ({added})"
+        if prior_includes - current_includes:
+            removed = ", ".join(sorted(prior_includes - current_includes))
+            return Significance.LOW.value, f"SPF include removed ({removed})"
         return Significance.TRIVIAL.value, "SPF include list reordered"
     if field_name == "spf_lookups":
-        before = _to_float(change.previous)
-        after = _to_float(change.current)
-        if before is not None and after is not None and after >= 10 > before:
-            return Significance.HIGH.value, f"SPF reached the RFC 7208 lookup limit ({before:.0f} -> {after:.0f})"
+        prior_lookups = _to_float(change.previous)
+        current_lookups = _to_float(change.current)
+        if (
+            prior_lookups is not None
+            and current_lookups is not None
+            and current_lookups >= 10 > prior_lookups
+        ):
+            return (
+                Significance.HIGH.value,
+                f"SPF reached the RFC 7208 lookup limit ({prior_lookups:.0f} -> {current_lookups:.0f})",
+            )
         return Significance.TRIVIAL.value, "SPF lookup count changed"
     return None
 
@@ -253,21 +262,27 @@ def _rule_dmarc_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[st
             return Significance.MEDIUM.value, f"subdomain DMARC enforcement added (sp={after})"
         return Significance.MEDIUM.value, "DMARC subdomain policy changed"
     if field_name == "dmarc_pct":
-        before = _to_float(change.previous)
-        after = _to_float(change.current)
-        if before is None and after is not None and after < 100:
-            return Significance.HIGH.value, f"DMARC coverage reduced to {after:.0f}%"
-        if before is not None and after is not None and after < before:
-            return Significance.HIGH.value, f"DMARC coverage reduced ({before:.0f}% -> {after:.0f}%)"
-        if before is not None and after is not None and after > before:
-            return Significance.TRIVIAL.value, f"DMARC coverage raised ({before:.0f}% -> {after:.0f}%)"
+        prior_pct = _to_float(change.previous)
+        current_pct = _to_float(change.current)
+        if prior_pct is None and current_pct is not None and current_pct < 100:
+            return Significance.HIGH.value, f"DMARC coverage reduced to {current_pct:.0f}%"
+        if prior_pct is not None and current_pct is not None and current_pct < prior_pct:
+            return (
+                Significance.HIGH.value,
+                f"DMARC coverage reduced ({prior_pct:.0f}% -> {current_pct:.0f}%)",
+            )
+        if prior_pct is not None and current_pct is not None and current_pct > prior_pct:
+            return (
+                Significance.TRIVIAL.value,
+                f"DMARC coverage raised ({prior_pct:.0f}% -> {current_pct:.0f}%)",
+            )
         return Significance.LOW.value, "DMARC percentage changed"
     if field_name == "dmarc_rua":
-        before = {str(item) for item in _as_list(change.previous)}
-        after = {str(item) for item in _as_list(change.current)}
-        if before and not after:
+        prior_rua = {str(item) for item in _as_list(change.previous)}
+        current_rua = {str(item) for item in _as_list(change.current)}
+        if prior_rua and not current_rua:
             return Significance.MEDIUM.value, "DMARC reporting was disabled (rua removed)"
-        if not before and after:
+        if not prior_rua and current_rua:
             return Significance.TRIVIAL.value, "DMARC reporting was enabled"
         return Significance.TRIVIAL.value, "DMARC report address changed"
     return None
@@ -309,7 +324,10 @@ def _rule_transport_policy(change: ChangeRecord, context: dict[str, Any]) -> tup
         before_index = _MTA_STS_MODES.index(before) if before in _MTA_STS_MODES else 1
         after_index = _MTA_STS_MODES.index(after) if after in _MTA_STS_MODES else 1
         if after_index < before_index:
-            return Significance.CRITICAL.value, f"MTA-STS enforcement weakened (mode={before} -> mode={after})"
+            return (
+                Significance.CRITICAL.value,
+                f"MTA-STS enforcement weakened (mode={before} -> mode={after})",
+            )
         if after_index > before_index:
             return Significance.TRIVIAL.value, f"MTA-STS enforcement strengthened (mode={after})"
         return Significance.TRIVIAL.value, "MTA-STS mode changed"
@@ -472,6 +490,7 @@ def _rule_ttl(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] 
     Snapshots store TTLs as ``{record_type: ttl}``, so each type is compared on
     its own; a single sharp drop anywhere is enough to be worth mentioning.
     """
+
     def pairs(previous: Any, current: Any) -> list[tuple[str, float, float]]:
         """Yield (label, before, after) triples from either shape of payload."""
         if isinstance(previous, dict) or isinstance(current, dict):
@@ -503,72 +522,225 @@ def _rule_ttl(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] 
 
 DEFAULT_RULES: tuple[SignificanceRule, ...] = (
     SignificanceRule(
-        "SIG-A-001", (ChangeType.A_CHANGED, ChangeType.AAAA_CHANGED),
-        Significance.MEDIUM.value, "address record changed", predicate=_rule_a_record, priority=10,
+        "SIG-A-001",
+        (ChangeType.A_CHANGED, ChangeType.AAAA_CHANGED),
+        Significance.MEDIUM.value,
+        "address record changed",
+        predicate=_rule_a_record,
+        priority=10,
     ),
-    SignificanceRule("SIG-NS-001", (ChangeType.NS_CHANGED,), Significance.HIGH.value,
-                     "nameserver set changed", predicate=_rule_ns, priority=10),
-    SignificanceRule("SIG-MX-001", (ChangeType.MX_CHANGED,), Significance.MEDIUM.value,
-                     "MX records changed", predicate=_rule_mx, priority=10),
-    SignificanceRule("SIG-TXT-001", (ChangeType.TXT_CHANGED,), Significance.LOW.value,
-                     "TXT records changed", predicate=_rule_txt, priority=10),
-    SignificanceRule("SIG-CNAME-001", (ChangeType.CNAME_CHANGED,), Significance.MEDIUM.value,
-                     "CNAME changed", predicate=_rule_cname, priority=10),
-    SignificanceRule("SIG-CAA-001", (ChangeType.CAA_CHANGED,), Significance.MEDIUM.value,
-                     "CAA records changed", predicate=_rule_caa, priority=10),
-    SignificanceRule("SIG-SOA-001", (ChangeType.SOA_CHANGED,), Significance.LOW.value,
-                     "SOA record changed (serial bump is routine)", priority=1),
-    SignificanceRule("SIG-DNSSEC-001", (ChangeType.DNSSEC_CHANGED,), Significance.MEDIUM.value,
-                     "DNSSEC state changed", predicate=_rule_dnssec, priority=10),
-    SignificanceRule("SIG-TTL-001", (ChangeType.TTL_CHANGED,), Significance.TRIVIAL.value,
-                     "TTL changed", predicate=_rule_ttl, priority=10),
-    SignificanceRule("SIG-CERT-EXPIRED-001", (ChangeType.CERTIFICATE_EXPIRED,),
-                     Significance.HIGH.value, "certificate expired", priority=5),
-    SignificanceRule("SIG-CERT-ADDED-001", (ChangeType.CERTIFICATE_ADDED,),
-                     Significance.MEDIUM.value, "new certificate observed", priority=5),
-    SignificanceRule("SIG-CERT-ISSUER-001", (ChangeType.CERTIFICATE_ISSUER_CHANGED,),
-                     Significance.HIGH.value, "certificate issuer changed", priority=5),
-    SignificanceRule("SIG-CERT-KEY-001", (ChangeType.KEY_ALGORITHM_CHANGED,),
-                     Significance.MEDIUM.value, "certificate key algorithm changed", priority=5),
-    SignificanceRule("SIG-SAN-001", (ChangeType.SAN_CHANGED,), Significance.LOW.value,
-                     "certificate SAN set changed", priority=5),
-    SignificanceRule("SIG-CERT-REMOVED-001", (ChangeType.CERTIFICATE_REMOVED,),
-                     Significance.LOW.value, "certificate no longer observed", priority=5),
-    SignificanceRule("SIG-DANGLING-001", (ChangeType.DANGLING_DETECTED,), Significance.HIGH.value,
-                     "possible dangling DNS detected", priority=8),
-    SignificanceRule("SIG-ASN-001", (ChangeType.ASN_CHANGED,), Significance.MEDIUM.value,
-                     "hosting ASN changed", priority=5),
-    SignificanceRule("SIG-CLOUD-001", (ChangeType.CLOUD_PROVIDER_CHANGED,), Significance.MEDIUM.value,
-                     "cloud/CDN provider changed", priority=5),
-    SignificanceRule("SIG-SPF-001", (ChangeType.SPF_CHANGED,), Significance.MEDIUM.value,
-                     "SPF policy changed", predicate=_rule_spf_field, priority=12),
-    SignificanceRule("SIG-DMARC-001", (ChangeType.DMARC_CHANGED,), Significance.MEDIUM.value,
-                     "DMARC policy changed", predicate=_rule_dmarc_field, priority=12),
-    SignificanceRule("SIG-DKIM-001", (ChangeType.DKIM_CHANGED,), Significance.MEDIUM.value,
-                     "DKIM key set changed", predicate=_rule_dkim_field, priority=12),
-    SignificanceRule("SIG-TRANSPORT-001", (ChangeType.TRANSPORT_POLICY_CHANGED,), Significance.MEDIUM.value,
-                     "mail transport policy changed", predicate=_rule_transport_policy, priority=12),
-    SignificanceRule("SIG-SUB-ADDED-001", (ChangeType.SUBDOMAIN_ADDED,), Significance.LOW.value,
-                     "new subdomain discovered", priority=1),
-    SignificanceRule("SIG-SUB-REMOVED-001", (ChangeType.SUBDOMAIN_REMOVED,), Significance.LOW.value,
-                     "subdomain no longer observed", priority=1),
-    SignificanceRule("SIG-SUB-STATE-001", (ChangeType.SUBDOMAIN_STATE_CHANGED,),
-                     Significance.LOW.value, "subdomain state changed", priority=1),
-    SignificanceRule("SIG-REGISTRAR-001", (ChangeType.REGISTRAR_CHANGED,), Significance.HIGH.value,
-                     "domain registrar changed", priority=5),
-    SignificanceRule("SIG-EXPIRY-001", (ChangeType.EXPIRATION_CHANGED,), Significance.MEDIUM.value,
-                     "domain expiration date changed", priority=5),
-    SignificanceRule("SIG-POLICY-001", (ChangeType.POLICY_CHANGED,), Significance.MEDIUM.value,
-                     "DNS policy violation state changed", priority=5),
-    SignificanceRule("SIG-HEALTH-001", (ChangeType.HEALTH_SCORE_CHANGED,), Significance.TRIVIAL.value,
-                     "health score moved", priority=0),
+    SignificanceRule(
+        "SIG-NS-001",
+        (ChangeType.NS_CHANGED,),
+        Significance.HIGH.value,
+        "nameserver set changed",
+        predicate=_rule_ns,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-MX-001",
+        (ChangeType.MX_CHANGED,),
+        Significance.MEDIUM.value,
+        "MX records changed",
+        predicate=_rule_mx,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-TXT-001",
+        (ChangeType.TXT_CHANGED,),
+        Significance.LOW.value,
+        "TXT records changed",
+        predicate=_rule_txt,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-CNAME-001",
+        (ChangeType.CNAME_CHANGED,),
+        Significance.MEDIUM.value,
+        "CNAME changed",
+        predicate=_rule_cname,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-CAA-001",
+        (ChangeType.CAA_CHANGED,),
+        Significance.MEDIUM.value,
+        "CAA records changed",
+        predicate=_rule_caa,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-SOA-001",
+        (ChangeType.SOA_CHANGED,),
+        Significance.LOW.value,
+        "SOA record changed (serial bump is routine)",
+        priority=1,
+    ),
+    SignificanceRule(
+        "SIG-DNSSEC-001",
+        (ChangeType.DNSSEC_CHANGED,),
+        Significance.MEDIUM.value,
+        "DNSSEC state changed",
+        predicate=_rule_dnssec,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-TTL-001",
+        (ChangeType.TTL_CHANGED,),
+        Significance.TRIVIAL.value,
+        "TTL changed",
+        predicate=_rule_ttl,
+        priority=10,
+    ),
+    SignificanceRule(
+        "SIG-CERT-EXPIRED-001",
+        (ChangeType.CERTIFICATE_EXPIRED,),
+        Significance.HIGH.value,
+        "certificate expired",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-CERT-ADDED-001",
+        (ChangeType.CERTIFICATE_ADDED,),
+        Significance.MEDIUM.value,
+        "new certificate observed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-CERT-ISSUER-001",
+        (ChangeType.CERTIFICATE_ISSUER_CHANGED,),
+        Significance.HIGH.value,
+        "certificate issuer changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-CERT-KEY-001",
+        (ChangeType.KEY_ALGORITHM_CHANGED,),
+        Significance.MEDIUM.value,
+        "certificate key algorithm changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-SAN-001",
+        (ChangeType.SAN_CHANGED,),
+        Significance.LOW.value,
+        "certificate SAN set changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-CERT-REMOVED-001",
+        (ChangeType.CERTIFICATE_REMOVED,),
+        Significance.LOW.value,
+        "certificate no longer observed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-DANGLING-001",
+        (ChangeType.DANGLING_DETECTED,),
+        Significance.HIGH.value,
+        "possible dangling DNS detected",
+        priority=8,
+    ),
+    SignificanceRule(
+        "SIG-ASN-001", (ChangeType.ASN_CHANGED,), Significance.MEDIUM.value, "hosting ASN changed", priority=5
+    ),
+    SignificanceRule(
+        "SIG-CLOUD-001",
+        (ChangeType.CLOUD_PROVIDER_CHANGED,),
+        Significance.MEDIUM.value,
+        "cloud/CDN provider changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-SPF-001",
+        (ChangeType.SPF_CHANGED,),
+        Significance.MEDIUM.value,
+        "SPF policy changed",
+        predicate=_rule_spf_field,
+        priority=12,
+    ),
+    SignificanceRule(
+        "SIG-DMARC-001",
+        (ChangeType.DMARC_CHANGED,),
+        Significance.MEDIUM.value,
+        "DMARC policy changed",
+        predicate=_rule_dmarc_field,
+        priority=12,
+    ),
+    SignificanceRule(
+        "SIG-DKIM-001",
+        (ChangeType.DKIM_CHANGED,),
+        Significance.MEDIUM.value,
+        "DKIM key set changed",
+        predicate=_rule_dkim_field,
+        priority=12,
+    ),
+    SignificanceRule(
+        "SIG-TRANSPORT-001",
+        (ChangeType.TRANSPORT_POLICY_CHANGED,),
+        Significance.MEDIUM.value,
+        "mail transport policy changed",
+        predicate=_rule_transport_policy,
+        priority=12,
+    ),
+    SignificanceRule(
+        "SIG-SUB-ADDED-001",
+        (ChangeType.SUBDOMAIN_ADDED,),
+        Significance.LOW.value,
+        "new subdomain discovered",
+        priority=1,
+    ),
+    SignificanceRule(
+        "SIG-SUB-REMOVED-001",
+        (ChangeType.SUBDOMAIN_REMOVED,),
+        Significance.LOW.value,
+        "subdomain no longer observed",
+        priority=1,
+    ),
+    SignificanceRule(
+        "SIG-SUB-STATE-001",
+        (ChangeType.SUBDOMAIN_STATE_CHANGED,),
+        Significance.LOW.value,
+        "subdomain state changed",
+        priority=1,
+    ),
+    SignificanceRule(
+        "SIG-REGISTRAR-001",
+        (ChangeType.REGISTRAR_CHANGED,),
+        Significance.HIGH.value,
+        "domain registrar changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-EXPIRY-001",
+        (ChangeType.EXPIRATION_CHANGED,),
+        Significance.MEDIUM.value,
+        "domain expiration date changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-POLICY-001",
+        (ChangeType.POLICY_CHANGED,),
+        Significance.MEDIUM.value,
+        "DNS policy violation state changed",
+        priority=5,
+    ),
+    SignificanceRule(
+        "SIG-HEALTH-001",
+        (ChangeType.HEALTH_SCORE_CHANGED,),
+        Significance.TRIVIAL.value,
+        "health score moved",
+        priority=0,
+    ),
 )
 
 
 class SignificanceEngine:
     """Classifies changes using configurable rules."""
 
-    def __init__(self, rules: Iterable[SignificanceRule] | None = None, *, extra: Iterable[SignificanceRule] = ()) -> None:
+    def __init__(
+        self, rules: Iterable[SignificanceRule] | None = None, *, extra: Iterable[SignificanceRule] = ()
+    ) -> None:
         self.rules: list[SignificanceRule] = sorted(
             [*(rules or DEFAULT_RULES), *extra],
             key=lambda rule: -rule.priority,
@@ -601,7 +773,9 @@ class SignificanceEngine:
             change.reason = "no significance rule matched; defaulting to LOW"
         return change
 
-    def classify_many(self, changes: Iterable[ChangeRecord], context: dict[str, Any] | None = None) -> list[ChangeRecord]:
+    def classify_many(
+        self, changes: Iterable[ChangeRecord], context: dict[str, Any] | None = None
+    ) -> list[ChangeRecord]:
         """Classify a batch of changes."""
         return [self.classify(change, context) for change in changes]
 
@@ -609,9 +783,7 @@ class SignificanceEngine:
         """Filter to changes at or above ``minimum`` significance."""
         threshold = Significance.coerce(minimum)
         return [
-            change
-            for change in changes
-            if Significance.coerce(change.significance).rank >= threshold.rank
+            change for change in changes if Significance.coerce(change.significance).rank >= threshold.rank
         ]
 
     def add_rule(self, rule: SignificanceRule) -> None:

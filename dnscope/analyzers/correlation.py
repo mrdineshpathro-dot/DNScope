@@ -88,7 +88,18 @@ class CorrelationResult(SchemaVersioned):
 class _Asset:
     """Minimal asset shape the correlation engine understands."""
 
-    __slots__ = ("asns", "certificates", "cnames", "hostname", "ips", "mail", "nameservers", "organizations", "prefixes", "providers")
+    __slots__ = (
+        "asns",
+        "certificates",
+        "cnames",
+        "hostname",
+        "ips",
+        "mail",
+        "nameservers",
+        "organizations",
+        "prefixes",
+        "providers",
+    )
 
     def __init__(
         self,

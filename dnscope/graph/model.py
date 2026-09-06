@@ -207,9 +207,13 @@ class Graph(BaseModel):
             return None
         if create_missing:
             if src not in self.nodes:
-                self.add_node(src, source_kind or NodeKind.DOMAIN, label=source_label, observed_at=observed_at)
+                self.add_node(
+                    src, source_kind or NodeKind.DOMAIN, label=source_label, observed_at=observed_at
+                )
             if dst not in self.nodes:
-                self.add_node(dst, target_kind or NodeKind.DOMAIN, label=target_label, observed_at=observed_at)
+                self.add_node(
+                    dst, target_kind or NodeKind.DOMAIN, label=target_label, observed_at=observed_at
+                )
         if src not in self.nodes or dst not in self.nodes:
             return None
 
@@ -408,7 +412,7 @@ class Graph(BaseModel):
 
     def to_dot(self, *, limit: int = 500) -> str:
         """Graphviz DOT rendering (used by ``dnscope graph --format dot``)."""
-        lines = ["graph dnscope {", '  rankdir=LR;', '  node [shape=box, fontsize=10];']
+        lines = ["graph dnscope {", "  rankdir=LR;", "  node [shape=box, fontsize=10];"]
         for node in list(self.nodes.values())[:limit]:
             label = (node.label or node.node_id).replace('"', "'")
             lines.append(f'  "{node.node_id}" [label="{label}\\n({node.kind})"];')

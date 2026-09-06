@@ -31,9 +31,7 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
     description = "Domain/IP reputation, passive DNS subdomains and certificate data."
     homepage = "https://www.virustotal.com"
     base_url = "https://www.virustotal.com/api/v3/"
-    capabilities = ProviderCapabilities(
-        threat=True, ip=True, ct=True, subdomains=True, certificates=True
-    )
+    capabilities = ProviderCapabilities(threat=True, ip=True, ct=True, subdomains=True, certificates=True)
     requires_credentials = True
     commercial = True
     rate_limit_per_minute = 4.0  # public tier: 4 requests/minute
@@ -46,9 +44,9 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
     def fetch(self, target: str, context: ProviderContext, **options: Any) -> Any:
         """Fetch the domain report and (optionally) subdomains."""
         client = self._client(context)
-        payload: dict[str, Any] = {"domain": client.get_json(
-            f"{self.base_url}domains/{target}", headers=self.headers()
-        )}
+        payload: dict[str, Any] = {
+            "domain": client.get_json(f"{self.base_url}domains/{target}", headers=self.headers())
+        }
         if options.get("subdomains", True):
             payload["subdomains"] = client.get_json(
                 f"{self.base_url}domains/{target}/subdomains",
@@ -140,9 +138,11 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
 
 def _vt_indicator(data: dict[str, Any], attributes: dict[str, Any]) -> dict[str, Any]:
     """Build a canonical threat indicator from a VT domain object."""
-    stats = attributes.get("last_analysis_stats") if isinstance(
-        attributes.get("last_analysis_stats"), dict
-    ) else {}
+    stats = (
+        attributes.get("last_analysis_stats")
+        if isinstance(attributes.get("last_analysis_stats"), dict)
+        else {}
+    )
     return {
         "provider": "virustotal",
         "target": coerce_str(data.get("id"), maximum=255),
@@ -151,9 +151,9 @@ def _vt_indicator(data: dict[str, Any], attributes: dict[str, Any]) -> dict[str,
         "harmless": int(stats.get("harmless", 0) or 0),
         "undetected": int(stats.get("undetected", 0) or 0),
         "categories": coerce_str_list(
-            list((attributes.get("categories") or {}).values()) if isinstance(
-                attributes.get("categories"), dict
-            ) else None,
+            list((attributes.get("categories") or {}).values())
+            if isinstance(attributes.get("categories"), dict)
+            else None,
             maximum=32,
             item_length=64,
         ),
@@ -192,9 +192,7 @@ class ShodanProvider(ThreatProvider):
         result = ProviderQueryResult(
             provider=self.name,
             query="",
-            source=SourceRecord(
-                provider=self.name, source=self.base_url, confidence=Confidence.MEDIUM
-            ),
+            source=SourceRecord(provider=self.name, source=self.base_url, confidence=Confidence.MEDIUM),
             confidence=Confidence.MEDIUM,
         )
         if not isinstance(raw, dict):
@@ -295,9 +293,9 @@ class CensysProvider(ThreatProvider):
             result.error = coerce_str(raw.get("error"), maximum=200) or "no Censys data returned"
             return result
 
-        autonomous_system = payload.get("autonomous_system") if isinstance(
-            payload.get("autonomous_system"), dict
-        ) else {}
+        autonomous_system = (
+            payload.get("autonomous_system") if isinstance(payload.get("autonomous_system"), dict) else {}
+        )
         location = payload.get("location") if isinstance(payload.get("location"), dict) else {}
         services: list[dict[str, Any]] = []
         for service in ensure_bounded(payload.get("services"), maximum=100, name="censys.services"):

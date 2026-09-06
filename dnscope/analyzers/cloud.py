@@ -232,9 +232,7 @@ class CloudDetector:
     def detect_dns_provider(self, evidence: _Evidence | dict[str, Any]) -> list[CloudMatch]:
         """Detect the DNS hosting provider from authoritative nameservers."""
         bundle = self._coerce(evidence)
-        return self._match(
-            self.store.sections("infrastructure.yaml", "dns_provider"), bundle, "dns"
-        )
+        return self._match(self.store.sections("infrastructure.yaml", "dns_provider"), bundle, "dns")
 
     def detect_all(self, evidence: _Evidence | dict[str, Any]) -> dict[str, list[CloudMatch]]:
         """Run every detector and return results grouped by category."""
@@ -316,9 +314,7 @@ class CloudDetector:
             ASN: bundle.asns,
             ORGANIZATION: bundle.organizations,
             SERVER_HEADER: [bundle.headers.get("server", "")],
-            HEADER: [
-                f"{key}={value}" for key, value in bundle.headers.items()
-            ],
+            HEADER: [f"{key}={value}" for key, value in bundle.headers.items()],
             TLS: bundle.tls_issuers,
             HTTP: [],
         }.get(pattern_type, [])

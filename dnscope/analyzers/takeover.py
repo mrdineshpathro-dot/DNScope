@@ -239,9 +239,7 @@ class TakeoverAnalyzer:
         for definition in self.store.indicators():
             for pattern in definition.get("cname_patterns") or []:
                 needle = str(pattern).lower()
-                if needle.startswith(".") and (
-                    normalized.endswith(needle) or normalized == needle[1:]
-                ):
+                if needle.startswith(".") and (normalized.endswith(needle) or normalized == needle[1:]):
                     return definition
                 if not needle.startswith(".") and needle in normalized:
                     return definition

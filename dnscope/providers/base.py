@@ -168,7 +168,9 @@ class Provider(abc.ABC):
     # ------------------------------------------------------------------- query
 
     @abc.abstractmethod
-    def query(self, target: str, context: ProviderContext | None = None, **options: Any) -> ProviderQueryResult:
+    def query(
+        self, target: str, context: ProviderContext | None = None, **options: Any
+    ) -> ProviderQueryResult:
         """Fetch data for ``target`` and return canonical observations."""
 
     @abc.abstractmethod
@@ -196,7 +198,9 @@ class Provider(abc.ABC):
             source=self.source_record(target),
         )
 
-    def source_record(self, target: str, *, detail: str = "", confidence: Confidence = Confidence.MEDIUM) -> SourceRecord:
+    def source_record(
+        self, target: str, *, detail: str = "", confidence: Confidence = Confidence.MEDIUM
+    ) -> SourceRecord:
         """Provenance record for observations produced by this provider."""
         return SourceRecord(
             provider=self.name,
@@ -236,7 +240,9 @@ class DiscoveryProvider(Provider):
 
     category = "subdomains"
 
-    def query(self, target: str, context: ProviderContext | None = None, **options: Any) -> ProviderQueryResult:
+    def query(
+        self, target: str, context: ProviderContext | None = None, **options: Any
+    ) -> ProviderQueryResult:
         """Fetch and normalize subdomain observations for ``target``."""
         self.require_configured()
         ctx = context or ProviderContext()
@@ -255,7 +261,9 @@ class ThreatProvider(Provider):
 
     category = "threat"
 
-    def query(self, target: str, context: ProviderContext | None = None, **options: Any) -> ProviderQueryResult:
+    def query(
+        self, target: str, context: ProviderContext | None = None, **options: Any
+    ) -> ProviderQueryResult:
         """Fetch and normalize threat observations for ``target``."""
         self.require_configured()
         ctx = context or ProviderContext()

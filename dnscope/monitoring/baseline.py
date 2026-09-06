@@ -61,9 +61,9 @@ class Violation(SchemaVersioned):
         """One-line human description."""
         return f"{self.severity} {self.expectation}: expected {self.expected}, observed {self.observed}"
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, *, exclude_none: bool = True) -> dict[str, Any]:
         """JSON-ready dictionary."""
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", exclude_none=exclude_none)
 
 
 class Baseline(SchemaVersioned):
@@ -91,9 +91,9 @@ class Baseline(SchemaVersioned):
             f"expectations={len(self.expectations)} hash={self.payload_hash[:12]}"
         )
 
-    def to_dict(self, *, include_payload: bool = False) -> dict[str, Any]:
-        """JSON-ready dictionary."""
-        data = {
+    def to_dict(self, *, exclude_none: bool = True, include_payload: bool = False) -> dict[str, Any]:
+        """JSON-ready dictionary (payload omitted by default, it can be large)."""
+        data: dict[str, Any] = {
             "baseline_id": self.baseline_id,
             "target": self.target,
             "workspace": self.workspace,
@@ -244,10 +244,17 @@ class BaselineManager:
             failed = not self._matches(observed, expected)
         elif expectation.kind == "forbid":
             failed = self._matches(observed, expected)
-        elif expectation.kind == "min":
-            failed = _to_number(observed) is None or _to_number(observed) < _to_number(expected)
-        elif expectation.kind == "max":
-            failed = _to_number(observed) is None or _to_number(observed) > _to_number(expected)
+        elif expectation.kind in ("min", "max"):
+            observed_number = _to_number(observed)
+            expected_number = _to_number(expected)
+            if observed_number is None or expected_number is None:
+                # A missing or non-numeric value cannot satisfy a numeric bound,
+                # and comparing against None would raise.
+                failed = True
+            elif expectation.kind == "min":
+                failed = observed_number < expected_number
+            else:
+                failed = observed_number > expected_number
         else:
             return Violation(
                 expectation=expectation.name,
@@ -299,7 +306,11 @@ class BaselineManager:
         and a list expectation means "every listed value must be present".
         """
         if isinstance(expected, (list, tuple, set)):
-            observed_set = {str(item) for item in observed} if isinstance(observed, (list, tuple, set)) else {str(observed)}
+            observed_set = (
+                {str(item) for item in observed}
+                if isinstance(observed, (list, tuple, set))
+                else {str(observed)}
+            )
             return {str(item) for item in expected}.issubset(observed_set)
         if isinstance(observed, (list, tuple, set)):
             return str(expected) in {str(item) for item in observed}

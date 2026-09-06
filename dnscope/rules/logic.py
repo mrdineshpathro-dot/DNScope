@@ -25,10 +25,14 @@ from dnscope.utils.domains import normalize_hostname, registered_domain
 _LOGIC: dict[str, Callable[[ScanContext], list[RuleHit] | None]] = {}
 
 
-def logic(name: str) -> Callable[[Callable[[ScanContext], list[RuleHit] | None]], Callable[[ScanContext], list[RuleHit] | None]]:
+def logic(
+    name: str,
+) -> Callable[[Callable[[ScanContext], list[RuleHit] | None]], Callable[[ScanContext], list[RuleHit] | None]]:
     """Register a rule-logic predicate under ``name``."""
 
-    def decorator(func: Callable[[ScanContext], list[RuleHit] | None]) -> Callable[[ScanContext], list[RuleHit] | None]:
+    def decorator(
+        func: Callable[[ScanContext], list[RuleHit] | None],
+    ) -> Callable[[ScanContext], list[RuleHit] | None]:
         if name in _LOGIC:
             raise ValueError(f"duplicate rule logic name: {name}")
         _LOGIC[name] = func
@@ -187,7 +191,10 @@ def dns_cname_at_apex(context: ScanContext) -> list[RuleHit] | None:
             location={"record_type": "CNAME", "hostname": context.target},
             evidence=[_dns_evidence(context, "CNAME")],
             context={"cname": cnames},
-            description=f"the zone apex carries a CNAME ({_join(cnames, 2)}), which conflicts with the SOA and NS records",
+            description=(
+                f"the zone apex carries a CNAME ({_join(cnames, 2)}), "
+                "which conflicts with the SOA and NS records"
+            ),
         )
     ]
 
@@ -238,7 +245,10 @@ def dns_ttl_very_low(context: ScanContext) -> list[RuleHit] | None:
             location={"record_type": _join({record.rtype for record in short}, 3)},
             evidence=[_dns_evidence(context, short[0].rtype)],
             context={"lowest_ttl": lowest, "records": [record.rtype for record in short]},
-            description=f"delegation records carry a {lowest}s TTL, which multiplies query load on the authoritative servers",
+            description=(
+                f"delegation records carry a {lowest}s TTL, which multiplies "
+                "query load on the authoritative servers"
+            ),
         )
     ]
 
@@ -261,7 +271,9 @@ def dns_wildcard_present(context: ScanContext) -> list[RuleHit] | None:
             ],
             context={"addresses": context.wildcard_addresses},
             needs_verification=True,
-            description="the zone answers for arbitrary hostnames, which hides typos and inflates discovery results",
+            description=(
+                "the zone answers for arbitrary hostnames, which hides typos and inflates discovery results"
+            ),
         )
     ]
 
@@ -359,7 +371,10 @@ def dnssec_no_ds(context: ScanContext) -> list[RuleHit] | None:
             ],
             context={"keys": len(keys)},
             needs_verification=True,
-            description="the zone publishes DNSKEY records but the parent has no DS record, so the chain of trust is broken",
+            description=(
+                "the zone publishes DNSKEY records but the parent has "
+                "no DS record, so the chain of trust is broken"
+            ),
         )
     ]
 
@@ -449,7 +464,10 @@ def dnssec_key_too_small(context: ScanContext) -> list[RuleHit] | None:
                     )
                 ],
                 context={"bits": int(bits), "role": getattr(key, "role", "")},
-                description=f"the {getattr(key, 'role', '') or 'zone'} key is {bits} bits; 2048 bits is the recommended minimum",
+                description=(
+                    f"the {getattr(key, 'role', '') or 'zone'} key is {bits} "
+                    "bits; 2048 bits is the recommended minimum"
+                ),
             )
         )
     return hits or None
@@ -484,7 +502,9 @@ def email_no_spf(context: ScanContext) -> list[RuleHit] | None:
             location={"record_type": "TXT", "hostname": context.target},
             evidence=[getattr(spf, "evidence", None) or _dns_evidence(context, "TXT")],
             context={"issues": list(getattr(spf, "issues", []))},
-            description="no SPF record is published, so receivers cannot tell legitimate mail from spoofed mail",
+            description=(
+                "no SPF record is published, so receivers cannot tell legitimate mail from spoofed mail"
+            ),
         )
     ]
 
@@ -506,7 +526,9 @@ def email_spf_permissive(context: ScanContext) -> list[RuleHit] | None:
             evidence=[getattr(spf, "evidence", None) or _dns_evidence(context, "TXT")],
             context={"all_mechanism": qualifier, "record": getattr(spf, "record", "")},
             severity=severity,
-            description=f"the SPF record ends in '{qualifier}', which authorizes any host to send mail for the domain",
+            description=(
+                f"the SPF record ends in '{qualifier}', which authorizes any host to send mail for the domain"
+            ),
         )
     ]
 
@@ -586,9 +608,13 @@ def email_no_dmarc(context: ScanContext) -> list[RuleHit] | None:
         RuleHit(
             target=context.target,
             location={"record_type": "TXT", "hostname": f"_dmarc.{context.target}"},
-            evidence=[getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")],
+            evidence=[
+                getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")
+            ],
             context={"issues": list(getattr(dmarc, "issues", []))},
-            description="no DMARC policy is published, so receivers have no instruction for failing authentication",
+            description=(
+                "no DMARC policy is published, so receivers have no instruction for failing authentication"
+            ),
         )
     ]
 
@@ -607,7 +633,9 @@ def email_dmarc_no_enforcement(context: ScanContext) -> list[RuleHit] | None:
         RuleHit(
             target=context.target,
             location={"record_type": "TXT", "hostname": f"_dmarc.{context.target}", "policy": policy},
-            evidence=[getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")],
+            evidence=[
+                getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")
+            ],
             context={"policy": policy, "rua": list(getattr(dmarc, "rua", [])), "pct": percentage},
             description="the DMARC policy is p=none, which monitors but does not stop spoofed mail",
         )
@@ -634,7 +662,9 @@ def email_dmarc_partial(context: ScanContext) -> list[RuleHit] | None:
         RuleHit(
             target=context.target,
             location={"record_type": "TXT", "hostname": f"_dmarc.{context.target}"},
-            evidence=[getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")],
+            evidence=[
+                getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")
+            ],
             context={"pct": percentage, "sp": sub_policy, "p": policy},
             description="; ".join(problems),
         )
@@ -653,7 +683,9 @@ def email_dmarc_no_reporting(context: ScanContext) -> list[RuleHit] | None:
         RuleHit(
             target=context.target,
             location={"record_type": "TXT", "hostname": f"_dmarc.{context.target}"},
-            evidence=[getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")],
+            evidence=[
+                getattr(dmarc, "evidence", None) or _dns_evidence(context, "TXT", f"_dmarc.{context.target}")
+            ],
             context={"policy": getattr(dmarc, "policy", "")},
             description="the DMARC record has no rua address, so no aggregate reports are collected",
         )
@@ -677,7 +709,9 @@ def email_dkim_weak_key(context: ScanContext) -> list[RuleHit] | None:
                     location={"record_type": "TXT", "hostname": getattr(result, "query_name", "")},
                     evidence=[getattr(result, "evidence", None) or _dns_evidence(context, "TXT")],
                     context={"selector": selector, "revoked": True},
-                    description=f"the DKIM key at selector '{selector}' has an empty p= tag (revoked or placeholder)",
+                    description=(
+                        f"the DKIM key at selector '{selector}' has an empty p= tag (revoked or placeholder)"
+                    ),
                 )
             )
             continue
@@ -688,7 +722,9 @@ def email_dkim_weak_key(context: ScanContext) -> list[RuleHit] | None:
                     location={"record_type": "TXT", "hostname": getattr(result, "query_name", "")},
                     evidence=[getattr(result, "evidence", None) or _dns_evidence(context, "TXT")],
                     context={"selector": selector, "bits": int(bits)},
-                    description=f"the DKIM key at selector '{selector}' is {int(bits)} bits; 2048 bits is recommended",
+                    description=(
+                        f"the DKIM key at selector '{selector}' is {int(bits)} bits; 2048 bits is recommended"
+                    ),
                 )
             )
     return hits or None
@@ -842,7 +878,10 @@ def cert_weak_material(context: ScanContext) -> list[RuleHit] | None:
         hits.append(
             RuleHit(
                 target=certificate.subject_cn or context.target,
-                location={"fingerprint": certificate.identity[:16], "algorithm": certificate.public_key_algorithm},
+                location={
+                    "fingerprint": certificate.identity[:16],
+                    "algorithm": certificate.public_key_algorithm,
+                },
                 evidence=[
                     context.evidence(
                         f"certificate {certificate.identity[:16]}",
@@ -916,7 +955,9 @@ def infra_private_address(context: ScanContext) -> list[RuleHit] | None:
                     )
                 ],
                 context={"flags": flags, "co_hosted": risk.co_hosted[:10]},
-                description=f"{risk.ip} is in {'private' if 'PRIVATE_ADDRESS' in flags else 'reserved'} address space",
+                description=(
+                    f"{risk.ip} is in {'private' if 'PRIVATE_ADDRESS' in flags else 'reserved'} address space"
+                ),
             )
         )
     return hits or None
@@ -1190,7 +1231,8 @@ def threat_hostile_reputation(context: ScanContext) -> list[RuleHit] | None:
                 location={"provider": getattr(indicator, "provider", "")},
                 evidence=[
                     context.evidence(
-                        f"{getattr(indicator, 'provider', '')} reputation for {getattr(indicator, 'subject', '')}",
+                        f"{getattr(indicator, 'provider', '')} reputation "
+                        "for {getattr(indicator, 'subject', '')}",
                         getattr(indicator, "summary", lambda: "")(),
                         quality="CORRELATED",
                         confidence="MEDIUM",
@@ -1236,7 +1278,11 @@ def intelligence_observations(context: ScanContext) -> list[RuleHit] | None:
                         provider=str(observation.get("source", "intelligence")),
                     )
                 ],
-                context={key: value for key, value in observation.items() if key not in ("id", "detail", "evidence")},
+                context={
+                    key: value
+                    for key, value in observation.items()
+                    if key not in ("id", "detail", "evidence")
+                },
                 description=str(observation.get("detail", "")),
             )
         )

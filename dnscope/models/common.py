@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum as _StdStrEnum
-from typing import Any
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -31,8 +31,12 @@ class StrEnum(_StdStrEnum):
         return tuple(member.value for member in cls)
 
     @classmethod
-    def coerce(cls, value: Any) -> StrEnum:
-        """Case-insensitively convert ``value`` to a member."""
+    def coerce(cls, value: Any) -> Self:
+        """Case-insensitively convert ``value`` to a member of ``cls``.
+
+        Typed as ``Self`` so callers keep the concrete subclass and its helpers
+        (``rank``, ``sarif_level``, ``weight``) stay visible to type checkers.
+        """
         if isinstance(value, cls):
             return value
         text = str(value).strip().upper()

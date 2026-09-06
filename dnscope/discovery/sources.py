@@ -389,7 +389,9 @@ class DNSBruteforceSource(DiscoverySource):
     name = "dns"
     kind = ACTIVE
 
-    def __init__(self, engine: DNSEngine | None, *, labels: Sequence[str] | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, engine: DNSEngine | None, *, labels: Sequence[str] | None = None, **kwargs: Any
+    ) -> None:
         super().__init__(**kwargs)
         self.engine = engine
         self.labels = list(labels or BUILTIN_WORDLIST)

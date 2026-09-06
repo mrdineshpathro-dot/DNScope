@@ -166,9 +166,7 @@ class Scheduler:
     def list_monitors(self, *, enabled_only: bool = False) -> list[MonitorJob]:
         """Stored monitors as models."""
         return [
-            MonitorJob.model_validate(
-                {**row, "alert_channels": row.get("alert_channels") or []}
-            )
+            MonitorJob.model_validate({**row, "alert_channels": row.get("alert_channels") or []})
             for row in self.db.list_monitors(enabled_only=enabled_only)
         ]
 

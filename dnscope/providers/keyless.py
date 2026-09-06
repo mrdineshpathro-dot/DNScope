@@ -66,7 +66,9 @@ class CymruASNProvider(Provider):
         nibbles = address.exploded.replace(":", "")[::-1]
         return ".".join(nibbles) + ".origin6.asn.cymru.com"
 
-    def query(self, target: str, context: ProviderContext | None = None, **options: Any) -> ProviderQueryResult:
+    def query(
+        self, target: str, context: ProviderContext | None = None, **options: Any
+    ) -> ProviderQueryResult:
         """Look up ASN data for one IP address."""
         ctx = context or ProviderContext()
         result = self.empty_result(target)
@@ -175,7 +177,9 @@ class RdapProvider(Provider):
             return client.get_json(f"https://rdap.org/ip/{target}")
         return client.get_json(f"{self.base_url}{target}")
 
-    def query(self, target: str, context: ProviderContext | None = None, **options: Any) -> ProviderQueryResult:
+    def query(
+        self, target: str, context: ProviderContext | None = None, **options: Any
+    ) -> ProviderQueryResult:
         """Fetch and normalize RDAP data for a domain or IP."""
         ctx = context or ProviderContext()
         result = self.empty_result(target)
@@ -251,7 +255,8 @@ class RdapProvider(Provider):
                 "status": [item.lower() for item in status],
                 "registration_date": dates.get("registration", ""),
                 "expiration_date": dates.get("expiration", ""),
-                "last_changed": dates.get("last changed", "") or dates.get("last update of rdap database", ""),
+                "last_changed": dates.get("last changed", "")
+                or dates.get("last update of rdap database", ""),
                 "events": dates,
                 "nameservers": nameservers,
                 "secure_dns": raw.get("secureDNS") if isinstance(raw.get("secureDNS"), dict) else None,

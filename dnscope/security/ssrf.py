@@ -132,9 +132,7 @@ class SSRFValidator:
         if not scheme:
             return ValidationResult(text, False, reason="URL has no scheme")
         if scheme not in self.allowed_schemes:
-            return ValidationResult(
-                text, False, reason=f"scheme {scheme!r} is not permitted", scheme=scheme
-            )
+            return ValidationResult(text, False, reason=f"scheme {scheme!r} is not permitted", scheme=scheme)
         if self.require_https and scheme != "https":
             return ValidationResult(text, False, reason="HTTPS is required", scheme=scheme)
 
@@ -148,14 +146,10 @@ class SSRFValidator:
 
         port = parts.port
         if port is not None and not 1 <= port <= self.max_port:
-            return ValidationResult(
-                text, False, reason=f"port {port} out of range", scheme=scheme, host=host
-            )
+            return ValidationResult(text, False, reason=f"port {port} out of range", scheme=scheme, host=host)
 
         if host in ALWAYS_BLOCKED_HOSTS:
-            return ValidationResult(
-                text, False, reason=f"host {host!r} is blocked", scheme=scheme, host=host
-            )
+            return ValidationResult(text, False, reason=f"host {host!r} is blocked", scheme=scheme, host=host)
         for suffix in BLOCKED_SUFFIXES:
             if host.endswith(suffix):
                 return ValidationResult(
@@ -167,9 +161,7 @@ class SSRFValidator:
             )
 
         literal_ip = _is_ip(host)
-        result = ValidationResult(
-            text, True, scheme=scheme, host=host, port=port, literal_ip=literal_ip
-        )
+        result = ValidationResult(text, True, scheme=scheme, host=host, port=port, literal_ip=literal_ip)
 
         if literal_ip:
             result.resolved_addresses = [host]

@@ -114,9 +114,7 @@ def capture_debug_records(logger_name: str = "dnscope") -> list[logging.LogRecor
 
 def _silence_noisy_third_party() -> None:
     for name in ("httpx", "httpcore", "asyncio", "urllib3"):
-        logging.getLogger(name).setLevel(
-            os.environ.get("DNSCOPE_THIRD_PARTY_LOG_LEVEL", "WARNING")
-        )
+        logging.getLogger(name).setLevel(os.environ.get("DNSCOPE_THIRD_PARTY_LOG_LEVEL", "WARNING"))
 
 
 _silence_noisy_third_party()

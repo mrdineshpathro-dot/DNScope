@@ -20,9 +20,7 @@ class OTXProvider(DiscoveryProvider):
     description = "AlienVault OTX passive DNS hostnames and reputation pulses."
     homepage = "https://otx.alienvault.com"
     base_url = "https://otx.alienvault.com/api/v1/"
-    capabilities = ProviderCapabilities(
-        subdomains=True, threat=True, history=True, ip=True, dns=True
-    )
+    capabilities = ProviderCapabilities(subdomains=True, threat=True, history=True, ip=True, dns=True)
     requires_credentials = True
     commercial = False
     rate_limit_per_minute = 60.0
@@ -145,9 +143,7 @@ class URLScanProvider(DiscoveryProvider):
         result = ProviderQueryResult(
             provider=self.name,
             query="",
-            source=SourceRecord(
-                provider=self.name, source=self.base_url, confidence=Confidence.MEDIUM
-            ),
+            source=SourceRecord(provider=self.name, source=self.base_url, confidence=Confidence.MEDIUM),
             confidence=Confidence.MEDIUM,
         )
         if not isinstance(raw, dict):
@@ -228,9 +224,7 @@ class SecurityTrailsProvider(DiscoveryProvider):
         result = ProviderQueryResult(
             provider=self.name,
             query="",
-            source=SourceRecord(
-                provider=self.name, source=self.base_url, confidence=Confidence.MEDIUM
-            ),
+            source=SourceRecord(provider=self.name, source=self.base_url, confidence=Confidence.MEDIUM),
             confidence=Confidence.MEDIUM,
         )
         if not isinstance(raw, dict):

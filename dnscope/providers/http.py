@@ -465,7 +465,7 @@ class SafeHTTPClient:
         """Exponential backoff with optional jitter."""
         if retry_after is not None:
             return min(60.0, max(0.0, retry_after))
-        delay = self.backoff_factor ** attempt
+        delay = self.backoff_factor**attempt
         if self._jitter:
             delay *= 0.5 + random.random()
         return min(30.0, delay)

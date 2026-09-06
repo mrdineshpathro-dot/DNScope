@@ -156,9 +156,7 @@ class DiscoveryPipeline:
             }
 
         # 3. validate, normalize, scope-filter and de-duplicate
-        validator = HostValidator(
-            self.scope, wildcard_addresses=wildcard_addresses, allow_ip=False
-        )
+        validator = HostValidator(self.scope, wildcard_addresses=wildcard_addresses, allow_ip=False)
         accepted = validator.process(candidates)[: self.max_results]
         if len(accepted) < len(candidates):
             validator.summary.record_invalid_overflow(len(candidates) - len(accepted))
@@ -236,9 +234,7 @@ class DiscoveryPipeline:
         """Resolve hostnames with bounded concurrency."""
         if self.engine is None:
             return {}
-        gatherer = BoundedGatherer(
-            concurrency=self.concurrency, rate=self.rate_limit, name="discovery-dns"
-        )
+        gatherer = BoundedGatherer(concurrency=self.concurrency, rate=self.rate_limit, name="discovery-dns")
 
         def _work(hostname: str) -> tuple[str, dict[str, Any]]:
             a_result = self.engine.query(hostname, "A")
@@ -333,6 +329,7 @@ class DiscoveryPipeline:
             hosts.append(host)
         hosts.sort(key=lambda item: (not item.is_active, item.hostname))
         return hosts
+
 
 __all__ = [
     "DiscoveredHost",

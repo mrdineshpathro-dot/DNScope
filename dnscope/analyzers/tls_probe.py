@@ -99,26 +99,26 @@ class TLSProbe:
                 socket.create_connection((hostname, port), timeout=self.timeout) as raw,
                 context.wrap_socket(raw, server_hostname=sni or None) as connection,
             ):
-                    result.tls_version = connection.version() or ""
-                    cipher = connection.cipher()
-                    if cipher:
-                        result.cipher = cipher[0]
-                        result.cipher_bits = int(cipher[2]) if len(cipher) > 2 else None
-                    try:
-                        negotiated = connection.selected_alpn_protocol()
-                        result.alpn = [negotiated] if negotiated else []
-                    except (NotImplementedError, ssl.SSLError):
-                        result.alpn = []
-                    der = connection.getpeercert(binary_form=True)
-                    parsed = connection.getpeercert()
-                    result.verified = bool(parsed) and self.verify
-                    if der:
-                        result.peer_certificate = _certificate_from_der(der, parsed)
-                        result.chain = [result.peer_certificate] if result.peer_certificate else []
-                    elif parsed:
-                        result.peer_certificate = _certificate_from_parsed(parsed)
-                        result.chain = [result.peer_certificate] if result.peer_certificate else []
-                    result.ok = True
+                result.tls_version = connection.version() or ""
+                cipher = connection.cipher()
+                if cipher:
+                    result.cipher = cipher[0]
+                    result.cipher_bits = int(cipher[2]) if len(cipher) > 2 else None
+                try:
+                    negotiated = connection.selected_alpn_protocol()
+                    result.alpn = [negotiated] if negotiated else []
+                except (NotImplementedError, ssl.SSLError):
+                    result.alpn = []
+                der = connection.getpeercert(binary_form=True)
+                parsed = connection.getpeercert()
+                result.verified = bool(parsed) and self.verify
+                if der:
+                    result.peer_certificate = _certificate_from_der(der, parsed)
+                    result.chain = [result.peer_certificate] if result.peer_certificate else []
+                elif parsed:
+                    result.peer_certificate = _certificate_from_parsed(parsed)
+                    result.chain = [result.peer_certificate] if result.peer_certificate else []
+                result.ok = True
         except ssl.SSLCertVerificationError as exc:
             result.error = f"certificate verification failed: {exc.reason or exc}"
             result.verify_error = str(exc)
@@ -180,7 +180,6 @@ def _certificate_from_der(der: bytes, parsed: dict[str, Any] | None) -> Certific
     """Parse a DER certificate with ``cryptography`` for full detail."""
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes
-
 
     certificate = x509.load_der_x509_certificate(der)
     try:

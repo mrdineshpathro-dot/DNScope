@@ -102,7 +102,9 @@ class CertificateReport(SchemaVersioned):
                 issues.append(
                     {
                         "certificate": certificate.identity,
-                        "issue": f"signature algorithm {certificate.signature_algorithm} is considered broken",
+                        "issue": (
+                            f"signature algorithm {certificate.signature_algorithm} is considered broken"
+                        ),
                         "severity": "HIGH",
                     }
                 )
@@ -162,9 +164,7 @@ class CertificateSetChange(SchemaVersioned):
     @property
     def changed(self) -> bool:
         """``True`` when anything differs."""
-        return bool(
-            self.added or self.removed or self.renewed or self.newly_expired or self.newly_expiring
-        )
+        return bool(self.added or self.removed or self.renewed or self.newly_expired or self.newly_expiring)
 
     def to_changes(self) -> list[ChangeRecord]:
         """Convert the diff into typed :class:`ChangeRecord` rows."""
@@ -429,10 +429,7 @@ class CertificateEngine:
         if isinstance(item, CertificateInfo):
             return item.identity
         return str(
-            item.get("fingerprint_sha256")
-            or item.get("serial_number")
-            or item.get("subject_cn")
-            or ""
+            item.get("fingerprint_sha256") or item.get("serial_number") or item.get("subject_cn") or ""
         ).lower()
 
     def _coerce(self, item: CertificateInfo | dict[str, Any]) -> CertificateInfo:

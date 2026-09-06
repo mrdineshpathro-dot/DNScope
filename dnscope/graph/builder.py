@@ -57,8 +57,11 @@ class GraphBuilder:
         if not name:
             return
         self.graph.add_node(
-            name, NodeKind.SUBDOMAIN if parent_domain(name) else NodeKind.DOMAIN,
-            label=name, source=source, domain=registered_domain(name),
+            name,
+            NodeKind.SUBDOMAIN if parent_domain(name) else NodeKind.DOMAIN,
+            label=name,
+            source=source,
+            domain=registered_domain(name),
         )
         for query in answer.queries:
             rtype = query.rtype
@@ -69,13 +72,19 @@ class GraphBuilder:
                     if not address:
                         continue
                     self.graph.add_node(
-                        address, NodeKind.IP, label=address, source=source,
+                        address,
+                        NodeKind.IP,
+                        label=address,
+                        source=source,
                         attributes={"version": parsed.get("version")},
                         quality=EvidenceQuality.OBSERVED.value,
                     )
                     self.graph.add_edge(
-                        name, EdgeType.RESOLVES_TO, address,
-                        source_kind=NodeKind.SUBDOMAIN, target_kind=NodeKind.IP,
+                        name,
+                        EdgeType.RESOLVES_TO,
+                        address,
+                        source_kind=NodeKind.SUBDOMAIN,
+                        target_kind=NodeKind.IP,
                         attributes={"ttl": record.ttl, "rtype": rtype},
                         provenance=source,
                     )
@@ -83,36 +92,55 @@ class GraphBuilder:
                     target = str(parsed.get("target", ""))
                     if target:
                         self.graph.add_node(
-                            target, NodeKind.CNAME, label=target, source=source,
+                            target,
+                            NodeKind.CNAME,
+                            label=target,
+                            source=source,
                             domain=registered_domain(target),
                         )
                         self.graph.add_edge(
-                            name, EdgeType.CNAME_TO, target,
-                            source_kind=NodeKind.SUBDOMAIN, target_kind=NodeKind.CNAME,
-                            attributes={"ttl": record.ttl}, provenance=source,
+                            name,
+                            EdgeType.CNAME_TO,
+                            target,
+                            source_kind=NodeKind.SUBDOMAIN,
+                            target_kind=NodeKind.CNAME,
+                            attributes={"ttl": record.ttl},
+                            provenance=source,
                         )
                 elif rtype == "NS":
                     ns = str(parsed.get("target", ""))
                     if ns:
                         self.graph.add_node(
-                            ns, NodeKind.NS, label=ns, source=source,
+                            ns,
+                            NodeKind.NS,
+                            label=ns,
+                            source=source,
                             domain=registered_domain(ns),
                         )
                         self.graph.add_edge(
-                            name, EdgeType.USES_NS, ns,
-                            source_kind=NodeKind.DOMAIN, target_kind=NodeKind.NS,
+                            name,
+                            EdgeType.USES_NS,
+                            ns,
+                            source_kind=NodeKind.DOMAIN,
+                            target_kind=NodeKind.NS,
                             provenance=source,
                         )
                 elif rtype == "MX":
                     exchange = str(parsed.get("exchange", ""))
                     if exchange and exchange != ".":
                         self.graph.add_node(
-                            exchange, NodeKind.MX, label=exchange, source=source,
+                            exchange,
+                            NodeKind.MX,
+                            label=exchange,
+                            source=source,
                             domain=registered_domain(exchange),
                         )
                         self.graph.add_edge(
-                            name, EdgeType.USES_MX, exchange,
-                            source_kind=NodeKind.DOMAIN, target_kind=NodeKind.MX,
+                            name,
+                            EdgeType.USES_MX,
+                            exchange,
+                            source_kind=NodeKind.DOMAIN,
+                            target_kind=NodeKind.MX,
                             attributes={"preference": parsed.get("preference")},
                             provenance=source,
                         )
@@ -121,12 +149,18 @@ class GraphBuilder:
                         pointer = normalize_hostname(value)
                         if pointer:
                             self.graph.add_node(
-                                pointer, NodeKind.SUBDOMAIN, label=pointer, source=source,
+                                pointer,
+                                NodeKind.SUBDOMAIN,
+                                label=pointer,
+                                source=source,
                                 domain=registered_domain(pointer),
                             )
                             self.graph.add_edge(
-                                name, EdgeType.RELATED_TO, pointer,
-                                attributes={"rtype": "PTR"}, provenance=source,
+                                name,
+                                EdgeType.RELATED_TO,
+                                pointer,
+                                attributes={"rtype": "PTR"},
+                                provenance=source,
                             )
 
     def add_ip_intelligence(
@@ -147,23 +181,37 @@ class GraphBuilder:
         normalized_asn = format_asn(asn)
         if normalized_asn:
             self.graph.add_node(
-                normalized_asn, NodeKind.ASN, label=normalized_asn, source=source,
+                normalized_asn,
+                NodeKind.ASN,
+                label=normalized_asn,
+                source=source,
                 attributes={"organization": organization, "prefix": prefix},
             )
             self.graph.add_edge(
-                ip, EdgeType.BELONGS_TO_ASN, normalized_asn,
-                source_kind=NodeKind.IP, target_kind=NodeKind.ASN,
-                provenance=source, quality=EvidenceQuality.OBSERVED.value,
+                ip,
+                EdgeType.BELONGS_TO_ASN,
+                normalized_asn,
+                source_kind=NodeKind.IP,
+                target_kind=NodeKind.ASN,
+                provenance=source,
+                quality=EvidenceQuality.OBSERVED.value,
             )
         if provider:
             self.graph.add_node(
-                provider, NodeKind.CLOUD_PROVIDER, label=provider, source=source,
+                provider,
+                NodeKind.CLOUD_PROVIDER,
+                label=provider,
+                source=source,
                 quality=EvidenceQuality.INFERRED.value,
             )
             self.graph.add_edge(
-                ip, EdgeType.HOSTED_BY, provider,
-                source_kind=NodeKind.IP, target_kind=NodeKind.CLOUD_PROVIDER,
-                provenance=source, quality=EvidenceQuality.INFERRED.value,
+                ip,
+                EdgeType.HOSTED_BY,
+                provider,
+                source_kind=NodeKind.IP,
+                target_kind=NodeKind.CLOUD_PROVIDER,
+                provenance=source,
+                quality=EvidenceQuality.INFERRED.value,
             )
 
     def add_certificate(
@@ -200,8 +248,11 @@ class GraphBuilder:
         if issuer:
             self.graph.add_node(issuer, NodeKind.CA, label=issuer, source=source)
             self.graph.add_edge(
-                node_id, EdgeType.ISSUED_BY, issuer,
-                source_kind=NodeKind.CERTIFICATE, target_kind=NodeKind.CA,
+                node_id,
+                EdgeType.ISSUED_BY,
+                issuer,
+                source_kind=NodeKind.CERTIFICATE,
+                target_kind=NodeKind.CA,
                 provenance=source,
             )
         for host in covered_hosts:
@@ -209,12 +260,18 @@ class GraphBuilder:
             if not normalized:
                 continue
             self.graph.add_node(
-                normalized, NodeKind.SUBDOMAIN, label=normalized, source=source,
+                normalized,
+                NodeKind.SUBDOMAIN,
+                label=normalized,
+                source=source,
                 domain=registered_domain(normalized),
             )
             self.graph.add_edge(
-                node_id, EdgeType.ISSUED_TO, normalized,
-                source_kind=NodeKind.CERTIFICATE, target_kind=NodeKind.SUBDOMAIN,
+                node_id,
+                EdgeType.ISSUED_TO,
+                normalized,
+                source_kind=NodeKind.CERTIFICATE,
+                target_kind=NodeKind.SUBDOMAIN,
                 provenance=source,
             )
 
@@ -238,15 +295,22 @@ class GraphBuilder:
             "dns": NodeKind.DNS_PROVIDER,
         }.get(category, NodeKind.CLOUD_PROVIDER)
         self.graph.add_node(
-            provider, kind, label=provider, source=source,
+            provider,
+            kind,
+            label=provider,
+            source=source,
             attributes={"category": category, "evidence": evidence, "confidence": confidence},
             quality=EvidenceQuality.INFERRED.value,
         )
         relation = EdgeType.PROXIED_BY if category in ("cdn", "waf") else EdgeType.HOSTED_BY
         self.graph.add_edge(
-            subject_id, relation, provider,
-            target_kind=kind, provenance=source,
-            attributes={"evidence": evidence}, quality=EvidenceQuality.INFERRED.value,
+            subject_id,
+            relation,
+            provider,
+            target_kind=kind,
+            provenance=source,
+            attributes={"evidence": evidence},
+            quality=EvidenceQuality.INFERRED.value,
         )
 
     def add_registrar(self, domain: str, registrar: str, *, source: str = "rdap") -> None:
@@ -257,8 +321,11 @@ class GraphBuilder:
         self.graph.add_node(name, NodeKind.DOMAIN, label=name, source=source)
         self.graph.add_node(registrar, NodeKind.REGISTRAR, label=registrar, source=source)
         self.graph.add_edge(
-            name, EdgeType.REGISTERED_WITH, registrar,
-            source_kind=NodeKind.DOMAIN, target_kind=NodeKind.REGISTRAR,
+            name,
+            EdgeType.REGISTERED_WITH,
+            registrar,
+            source_kind=NodeKind.DOMAIN,
+            target_kind=NodeKind.REGISTRAR,
             provenance=source,
         )
 
@@ -276,13 +343,17 @@ class GraphBuilder:
             return
         node_id = f"indicator:{indicator.lower()[:64]}"
         self.graph.add_node(
-            node_id, NodeKind.THREAT_INDICATOR, label=indicator,
+            node_id,
+            NodeKind.THREAT_INDICATOR,
+            label=indicator,
             source=provider or "threat-intel",
             attributes={"detail": detail, "provider": provider},
             quality=EvidenceQuality.OBSERVED.value,
         )
         self.graph.add_edge(
-            subject_id, EdgeType.RELATED_TO, node_id,
+            subject_id,
+            EdgeType.RELATED_TO,
+            node_id,
             target_kind=NodeKind.THREAT_INDICATOR,
             provenance=provider or "threat-intel",
         )
@@ -296,8 +367,11 @@ class GraphBuilder:
         self.graph.add_node(name, NodeKind.SUBDOMAIN, label=name, domain=registered_domain(name))
         self.graph.add_node(parent, NodeKind.DOMAIN, label=parent, domain=registered_domain(parent))
         self.graph.add_edge(
-            name, EdgeType.PARENT_OF, parent,
-            source_kind=NodeKind.SUBDOMAIN, target_kind=NodeKind.DOMAIN,
+            name,
+            EdgeType.PARENT_OF,
+            parent,
+            source_kind=NodeKind.SUBDOMAIN,
+            target_kind=NodeKind.DOMAIN,
             provenance="hierarchy",
         )
 

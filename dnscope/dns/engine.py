@@ -545,13 +545,13 @@ class DNSEngine:
             results[target] = self.query(name, rtype, resolver=target, use_cache=False)
         return results
 
-    def resolver_consistency(self, name: str, rtype: str = "A", *, resolvers: Sequence[str] | None = None) -> dict[str, Any]:
+    def resolver_consistency(
+        self, name: str, rtype: str = "A", *, resolvers: Sequence[str] | None = None
+    ) -> dict[str, Any]:
         """Summarize cross-resolver agreement for one name."""
         results = self.compare_resolvers(name, rtype, resolvers=resolvers)
         value_sets = {
-            resolver: tuple(sorted(result.rdata_set()))
-            for resolver, result in results.items()
-            if result.ok
+            resolver: tuple(sorted(result.rdata_set())) for resolver, result in results.items() if result.ok
         }
         distinct = {value for values in value_sets.values() for value in values}
         return {
@@ -561,9 +561,7 @@ class DNSEngine:
             "resolvers_answered": list(value_sets),
             "consistent": len({frozenset(values) for values in value_sets.values()}) <= 1,
             "distinct_values": sorted(distinct),
-            "failures": {
-                resolver: result.error for resolver, result in results.items() if not result.ok
-            },
+            "failures": {resolver: result.error for resolver, result in results.items() if not result.ok},
         }
 
     # --------------------------------------------------------------- utilities
@@ -611,9 +609,7 @@ class DNSEngine:
             info.wildcard = True
             info.addresses = sorted(non_empty[0])
             info.confidence = Confidence.HIGH.value
-            info.evidence = (
-                f"{len(non_empty)}/{len(seen)} random labels resolved to {info.addresses}"
-            )
+            info.evidence = f"{len(non_empty)}/{len(seen)} random labels resolved to {info.addresses}"
         elif non_empty:
             info.confidence = Confidence.LOW.value
             info.evidence = f"{len(non_empty)}/{len(seen)} random labels resolved (inconsistent)"
@@ -717,7 +713,11 @@ class DNSEngine:
         ns_result = self.query(normalized, "NS", resolver=resolver)
         profiles: list[NameserverProfile] = []
         nameservers = sorted(
-            {str(record.parsed.get("target", "")) for record in ns_result.records if record.parsed.get("target")}
+            {
+                str(record.parsed.get("target", ""))
+                for record in ns_result.records
+                if record.parsed.get("target")
+            }
         )
         for nameserver in nameservers:
             profile = NameserverProfile(
@@ -769,9 +769,7 @@ class DNSEngine:
             "average_latency_ms": round(self.total_latency_ms / self.queries_sent, 2)
             if self.queries_sent
             else 0.0,
-            "resolvers": {
-                name: info.to_dict() for name, info in sorted(self.resolver_stats.items())
-            },
+            "resolvers": {name: info.to_dict() for name, info in sorted(self.resolver_stats.items())},
             "errors": self.errors[-25:],
         }
 

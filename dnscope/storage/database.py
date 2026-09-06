@@ -592,8 +592,10 @@ class DNScopeDatabase:
                 organization = CASE WHEN excluded.organization != ''
                                     THEN excluded.organization ELSE ip_addresses.organization END,
                 prefix = CASE WHEN excluded.prefix != '' THEN excluded.prefix ELSE ip_addresses.prefix END,
-                country = CASE WHEN excluded.country != '' THEN excluded.country ELSE ip_addresses.country END,
-                provider = CASE WHEN excluded.provider != '' THEN excluded.provider ELSE ip_addresses.provider END,
+                country = CASE WHEN excluded.country != ''
+                               THEN excluded.country ELSE ip_addresses.country END,
+                provider = CASE WHEN excluded.provider != ''
+                                THEN excluded.provider ELSE ip_addresses.provider END,
                 last_seen = excluded.last_seen
             """,
             (
@@ -891,7 +893,10 @@ class DNScopeDatabase:
             params.append(kind.upper())
         sql += " ORDER BY last_seen DESC LIMIT ?"
         params.append(limit)
-        return [_row_to_dict(row, json_fields=("attributes", "sources", "tags")) for row in self.query(sql, params)]
+        return [
+            _row_to_dict(row, json_fields=("attributes", "sources", "tags"))
+            for row in self.query(sql, params)
+        ]
 
     def search_assets(self, term: str, *, limit: int = 100) -> list[dict[str, Any]]:
         """Search assets by value/label/attribute (used by ``assets search``)."""
@@ -1356,7 +1361,10 @@ class DNScopeDatabase:
             params.append(since)
         sql += " ORDER BY detected_at DESC LIMIT ?"
         params.append(limit)
-        return [_row_to_dict(row, json_fields=("previous", "current", "context")) for row in self.query(sql, params)]
+        return [
+            _row_to_dict(row, json_fields=("previous", "current", "context"))
+            for row in self.query(sql, params)
+        ]
 
     def mark_change_alerted(self, change_id: str) -> None:
         """Flag a change as having produced an alert."""
@@ -1756,7 +1764,9 @@ class DNScopeDatabase:
             sql += " AND (next_run_at IS NULL OR next_run_at <= ?)"
             params.append(utc_now_iso())
         sql += " ORDER BY next_run_at"
-        return [_row_to_dict(row, json_fields=("alert_channels", "payload")) for row in self.query(sql, params)]
+        return [
+            _row_to_dict(row, json_fields=("alert_channels", "payload")) for row in self.query(sql, params)
+        ]
 
     def update_schedule_run(self, schedule_id: str, *, status: str, next_run: str | None = None) -> None:
         """Record a schedule run."""
@@ -1969,7 +1979,9 @@ def _row_to_dict(row: sqlite3.Row | None, *, json_fields: Sequence[str] = ()) ->
     data = dict(row)
     for field in json_fields:
         if field in data:
-            default = [] if field in ("sources", "ips", "sans", "prefixes", "ptr", "references", "tags") else {}
+            default = (
+                [] if field in ("sources", "ips", "sans", "prefixes", "ptr", "references", "tags") else {}
+            )
             data[field] = _loads(data[field], default)
     return data
 

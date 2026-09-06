@@ -64,10 +64,7 @@ RICH_BANNER = (
 )
 
 #: Footer appended to terminal report output.
-TERMINAL_FOOTER = (
-    f"{PRODUCT_NAME} {PRODUCT_VERSION} by {AUTHOR} - "
-    f"{GITHUB_URL} - {YOUTUBE_URL}"
-)
+TERMINAL_FOOTER = f"{PRODUCT_NAME} {PRODUCT_VERSION} by {AUTHOR} - {GITHUB_URL} - {YOUTUBE_URL}"
 
 HTML_FOOTER = (
     f'<a href="{GITHUB_URL}">{PRODUCT_NAME} {PRODUCT_VERSION}</a> by {AUTHOR} &middot; '

@@ -9,6 +9,7 @@ infrastructure.
 from __future__ import annotations
 
 import asyncio
+import inspect
 import time
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from typing import Any, TypeVar
@@ -148,7 +149,7 @@ class BoundedGatherer:
 
     async def run(self, awaitables: Sequence[Awaitable[R]]) -> list[R | GatherError]:
         """Await ``awaitables`` concurrently, returning ordered results."""
-        tasks = list(awaitables)
+        tasks: list[Awaitable[R]] = list(awaitables)
         if len(tasks) > self.max_tasks:
             for task in tasks:
                 task.close()
@@ -170,11 +171,34 @@ class BoundedGatherer:
 
     async def map(
         self,
-        func: Callable[[T], Awaitable[R]],
+        func: Callable[[T], R] | Callable[[T], Awaitable[R]],
         items: Iterable[T],
     ) -> list[R | GatherError]:
-        """Apply ``func`` to each item with bounded concurrency."""
-        return await self.run([func(item) for item in items])
+        """Apply ``func`` to each item with bounded concurrency.
+
+        ``func`` may be synchronous or asynchronous: a plain function is wrapped
+        so blocking DNS work can share the same bounded executor as coroutine
+        work without callers having to care which is which.
+        """
+        awaitables: list[Awaitable[R]] = [self._invoke(func, item) for item in items]
+        return await self.run(awaitables)
+
+    async def _invoke(
+        self,
+        func: Callable[[T], R] | Callable[[T], Awaitable[R]],
+        item: T,
+    ) -> R:
+        """Call ``func`` so a raising *synchronous* function is still captured.
+
+        Calling a sync function eagerly would let its exception escape the batch,
+        which is exactly what the per-item error isolation exists to prevent.
+        Running it inside a coroutine lets ``asyncio.gather(return_exceptions=True)``
+        turn it into a :class:`GatherError` like any other failure.
+        """
+        result = func(item)  # type: ignore[operator]
+        if inspect.isawaitable(result):
+            return await result
+        return result
 
 
 class GatherError:

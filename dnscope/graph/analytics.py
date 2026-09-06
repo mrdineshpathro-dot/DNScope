@@ -233,11 +233,7 @@ class GraphAnalytics:
 
     def isolated_nodes(self) -> list[str]:
         """Nodes with no relationships (often stale or mis-scoped assets)."""
-        return [
-            node_id
-            for node_id in self.graph.nodes
-            if self.graph.degree(node_id)["total"] == 0
-        ]
+        return [node_id for node_id in self.graph.nodes if self.graph.degree(node_id)["total"] == 0]
 
     # --------------------------------------------------------------- internals
 

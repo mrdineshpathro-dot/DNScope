@@ -111,7 +111,9 @@ class IntelligenceReport(SchemaVersioned):
                     found.append(
                         {
                             "id": f"IP-{flag}",
-                            "severity": "HIGH" if flag in ("PRIVATE_ADDRESS", "PTR_FORWARD_MISMATCH") else "MEDIUM",
+                            "severity": "HIGH"
+                            if flag in ("PRIVATE_ADDRESS", "PTR_FORWARD_MISMATCH")
+                            else "MEDIUM",
                             "target": risk.ip,
                             "detail": "; ".join(risk.notes) or flag.replace("_", " ").lower(),
                             "evidence": f"ip={risk.ip} flags={','.join(risk.flags())}",
@@ -121,9 +123,7 @@ class IntelligenceReport(SchemaVersioned):
                     )
         if self.asn_summary is not None:
             for item in self.asn_summary.risks():
-                found.append(
-                    {**item, "target": self.target, "quality": "OBSERVED", "source": "team-cymru"}
-                )
+                found.append({**item, "target": self.target, "quality": "OBSERVED", "source": "team-cymru"})
         if self.certificates is not None:
             found.extend(certificate_observations(self.certificates, target=self.target))
         if self.threat is not None:

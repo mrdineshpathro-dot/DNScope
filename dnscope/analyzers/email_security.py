@@ -587,9 +587,7 @@ class EmailSecurityAnalyzer:
         if report.caa and not report.caa.found:
             issues.append("CAA: no CAA record restricts which CAs may issue certificates")
         elif report.caa and report.caa.found and not report.caa.restricts_issuance:
-            issues.append(
-                "CAA: records exist but none carry issue/issuewild, so issuance is not restricted"
-            )
+            issues.append("CAA: records exist but none carry issue/issuewild, so issuance is not restricted")
         for result in report.dkim:
             if result.found and result.key_size_bits and result.key_size_bits < 2048:
                 issues.append(

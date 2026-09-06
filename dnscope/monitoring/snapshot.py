@@ -114,9 +114,7 @@ class Snapshot(SchemaVersioned):
             "certificates": len(self.certificates),
             "ips": len(self.addresses),
             "records": sum(
-                len(values)
-                for host in self.hosts.values()
-                for values in (host.get("records") or {}).values()
+                len(values) for host in self.hosts.values() for values in (host.get("records") or {}).values()
             ),
             "providers": len(self.payload.get("cloud") or {}),
             "dangling": len(self.payload.get("dangling") or {}),
@@ -218,8 +216,7 @@ class SnapshotBuilder:
                 "records": records,
                 "ttls": ttls,
                 "status": {
-                    str(query.rtype).upper(): str(query.status)
-                    for query in getattr(answer, "queries", [])
+                    str(query.rtype).upper(): str(query.status) for query in getattr(answer, "queries", [])
                 },
             }
         if target not in hosts:
@@ -263,7 +260,9 @@ class SnapshotBuilder:
                     if getattr(result, "found", False)
                 }
             ),
-            "dkim_selectors_tested": sorted(str(item) for item in getattr(email, "dkim_selectors_tested", []) or []),
+            "dkim_selectors_tested": sorted(
+                str(item) for item in getattr(email, "dkim_selectors_tested", []) or []
+            ),
             "caa_issuers": sorted(str(item) for item in (caa.issuers() if caa else []) or []),
             "mta_sts_found": bool(getattr(mta_sts, "found", False)),
             "mta_sts_mode": str(getattr(mta_sts, "policy_mode", "") or ""),

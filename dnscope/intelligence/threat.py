@@ -316,7 +316,11 @@ class ThreatIntelligence:
             indicator.error = result.error or "provider request failed"
             return indicator
         raw = next(
-            (item for item in result.threat_indicators if str(item.get("target", subject)).lower() == subject.lower()),
+            (
+                item
+                for item in result.threat_indicators
+                if str(item.get("target", subject)).lower() == subject.lower()
+            ),
             result.threat_indicators[0] if result.threat_indicators else None,
         )
         if raw is None:

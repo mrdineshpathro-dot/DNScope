@@ -243,7 +243,9 @@ class ChangeDetector:
                 )
         return changes
 
-    def _subdomains(self, before: Mapping[str, Any], after: Mapping[str, Any], target: str) -> list[ChangeRecord]:
+    def _subdomains(
+        self, before: Mapping[str, Any], after: Mapping[str, Any], target: str
+    ) -> list[ChangeRecord]:
         """Subdomain lifecycle changes."""
         changes: list[ChangeRecord] = []
         previous = dict(before.get("subdomains") or {})
@@ -388,7 +390,9 @@ class ChangeDetector:
             )
         return changes
 
-    def _certificates(self, before: Mapping[str, Any], after: Mapping[str, Any], target: str) -> list[ChangeRecord]:
+    def _certificates(
+        self, before: Mapping[str, Any], after: Mapping[str, Any], target: str
+    ) -> list[ChangeRecord]:
         """Certificate set changes."""
         changes: list[ChangeRecord] = []
         previous = dict(before.get("certificates") or {})
@@ -514,7 +518,9 @@ class ChangeDetector:
             )
         return changes
 
-    def _dangling(self, before: Mapping[str, Any], after: Mapping[str, Any], target: str) -> list[ChangeRecord]:
+    def _dangling(
+        self, before: Mapping[str, Any], after: Mapping[str, Any], target: str
+    ) -> list[ChangeRecord]:
         """Newly detected dangling records."""
         changes: list[ChangeRecord] = []
         previous = dict(before.get("dangling") or {})
@@ -548,7 +554,8 @@ class ChangeDetector:
                     current_health,
                     context={
                         "delta": round(
-                            float(current_health.get("overall", 0.0)) - float(previous_health.get("overall", 0.0)),
+                            float(current_health.get("overall", 0.0))
+                            - float(previous_health.get("overall", 0.0)),
                             1,
                         )
                     },

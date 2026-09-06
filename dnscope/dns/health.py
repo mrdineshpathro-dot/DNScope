@@ -455,9 +455,7 @@ class DNSHealthAnalyzer:
                 status,
                 20.0,
                 detail=detail,
-                evidence=", ".join(
-                    f"{p.nameserver}={p.response_time_ms:.0f}ms" for p in reachable[:5]
-                ),
+                evidence=", ".join(f"{p.nameserver}={p.response_time_ms:.0f}ms" for p in reachable[:5]),
             )
             inconsistent = [p for p in profiles if not p.consistent]
             scorer.add(

@@ -169,10 +169,7 @@ class ProviderRegistry:
 
     def health_checks(self) -> dict[str, ProviderHealth]:
         """Run :meth:`Provider.health_check` for every provider."""
-        return {
-            name: provider.health_check()
-            for name, provider in sorted(self._providers.items())
-        }
+        return {name: provider.health_check() for name, provider in sorted(self._providers.items())}
 
     def capability_matrix(self) -> list[dict[str, str]]:
         """Rows for the ``dnscope providers`` table.

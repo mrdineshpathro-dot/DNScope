@@ -82,11 +82,7 @@ class AddressRisk(SchemaVersioned):
     def notable(self) -> bool:
         """``True`` when at least one flag is set."""
         return bool(
-            self.is_private
-            or self.is_reserved
-            or self.is_bogon_asn
-            or self.ptr_missing
-            or self.ptr_mismatch
+            self.is_private or self.is_reserved or self.is_bogon_asn or self.ptr_missing or self.ptr_mismatch
         )
 
     def flags(self) -> list[str]:
@@ -342,9 +338,7 @@ class IPIntelligenceEngine:
         names = sorted({normalize_hostname(str(value)) for value in result.values if value})
         record.ptr = names
         informative = [
-            item
-            for item in names
-            if item and not any(needle in item for needle in UNINFORMATIVE_PTR)
+            item for item in names if item and not any(needle in item for needle in UNINFORMATIVE_PTR)
         ]
         if not informative:
             risk.ptr_missing = True

@@ -193,9 +193,7 @@ class RiskEngine:
             out_of_scope_assets=int(assets.get("out_of_scope_count") or 0),
         )
         summary.external_dependencies = (
-            len(summary.cloud_providers)
-            + len(summary.cdns)
-            + len(summary.third_party_domains)
+            len(summary.cloud_providers) + len(summary.cdns) + len(summary.third_party_domains)
         )
         return summary
 

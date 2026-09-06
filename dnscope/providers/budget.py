@@ -125,9 +125,7 @@ class BudgetTracker:
             "total_rate_limited": sum(budget.rate_limited for budget in budgets),
             "total_cache_hits": sum(budget.cache_hits for budget in budgets),
             "bytes_received": sum(budget.bytes_received for budget in budgets),
-            "average_latency_ms": round(
-                sum(budget.total_latency_ms for budget in budgets) / total, 2
-            )
+            "average_latency_ms": round(sum(budget.total_latency_ms for budget in budgets) / total, 2)
             if total
             else 0.0,
             "open_circuits": [b.provider for b in budgets if b.circuit_open],
@@ -146,9 +144,7 @@ class BudgetTracker:
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-ready snapshot (for reports and the REST API)."""
-        return {
-            name: budget.to_dict() for name, budget in self.all().items()
-        }
+        return {name: budget.to_dict() for name, budget in self.all().items()}
 
 
 #: Process-wide default tracker, shared by the engine and the REST API.

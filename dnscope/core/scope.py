@@ -198,9 +198,7 @@ class Scope(BaseModel):
         elif is_ip_literal(normalized):
             decision = self._check_ip(normalized)
         elif not valid_hostname(normalized):
-            decision = ScopeDecision(
-                normalized, ScopeStatus.OUT_OF_SCOPE, reason="invalid hostname syntax"
-            )
+            decision = ScopeDecision(normalized, ScopeStatus.OUT_OF_SCOPE, reason="invalid hostname syntax")
         else:
             decision = self._check_host(normalized)
         if record:
@@ -210,7 +208,9 @@ class Scope(BaseModel):
     def _check_ip(self, address: str) -> ScopeDecision:
         """IP targets are only allowed when explicitly permitted."""
         if self.allow_ip_targets:
-            return ScopeDecision(address, ScopeStatus.IN_SCOPE, reason="ip target allowed by policy", matched_rule="ip")
+            return ScopeDecision(
+                address, ScopeStatus.IN_SCOPE, reason="ip target allowed by policy", matched_rule="ip"
+            )
         return ScopeDecision(
             address,
             ScopeStatus.OUT_OF_SCOPE,

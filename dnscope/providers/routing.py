@@ -128,7 +128,10 @@ class ProviderRouter:
                 continue
             if not provider.is_configured():
                 reasons.append(
-                    {"provider": provider.name, "reason": f"missing {', '.join(provider.env_vars) or 'credentials'}"}
+                    {
+                        "provider": provider.name,
+                        "reason": f"missing {', '.join(provider.env_vars) or 'credentials'}",
+                    }
                 )
                 continue
             budget = self.budget.budget(provider.name)
@@ -280,7 +283,9 @@ class ProviderRouter:
         suffix = f":{provider}" if provider else ""
         return f"provider:{capability}:{target.lower()}{suffix}"
 
-    def _cache_get(self, capability: str, target: str, *, provider: str | None = None) -> dict[str, Any] | None:
+    def _cache_get(
+        self, capability: str, target: str, *, provider: str | None = None
+    ) -> dict[str, Any] | None:
         """Read a cached provider result (``None`` on miss)."""
         if self.cache is None:
             return None

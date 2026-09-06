@@ -44,9 +44,11 @@ class CrtShProvider(DiscoveryProvider):
             raise ProviderResponseError("crt.sh requires an HTTP client in the context")
         wildcard = bool(options.get("wildcard", True))
         query = f"%.{target}" if wildcard else target
-        params = {"q": query, "output": "json", "exclude": "expired"} if options.get(
-            "exclude_expired"
-        ) else {"q": query, "output": "json"}
+        params = (
+            {"q": query, "output": "json", "exclude": "expired"}
+            if options.get("exclude_expired")
+            else {"q": query, "output": "json"}
+        )
         raw = client.get_json(self.base_url, params=params, max_body=10 * 1024 * 1024)
         if isinstance(raw, dict):
             # crt.sh returns a bare list on success; a dict usually means an error.
@@ -123,7 +125,9 @@ class CrtShProvider(DiscoveryProvider):
         result.certificates = [cert.to_dict() for cert in seen_certs.values()]
         return result
 
-    def query(self, target: str, context: ProviderContext | None = None, **options: Any) -> ProviderQueryResult:
+    def query(
+        self, target: str, context: ProviderContext | None = None, **options: Any
+    ) -> ProviderQueryResult:
         """Query and normalize, tolerating provider outages."""
         ctx = context or ProviderContext()
         if not ctx.may_call_network:
