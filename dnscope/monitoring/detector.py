@@ -426,40 +426,43 @@ class ChangeDetector:
                     )
                 )
             else:
-                if dict(prior).get("issuer") != dict(now).get("issuer"):
+                if _as_map(prior).get("issuer") != _as_map(now).get("issuer"):
                     changes.append(
                         self._change(
                             ChangeType.CERTIFICATE_ISSUER_CHANGED,
                             target,
                             fingerprint,
-                            dict(prior).get("issuer"),
-                            dict(now).get("issuer"),
+                            _as_map(prior).get("issuer"),
+                            _as_map(now).get("issuer"),
                             context={"fingerprint": fingerprint},
                         )
                     )
-                if sorted(dict(prior).get("sans") or []) != sorted(dict(now).get("sans") or []):
+                if sorted(_as_map(prior).get("sans") or []) != sorted(_as_map(now).get("sans") or []):
                     changes.append(
                         self._change(
                             ChangeType.SAN_CHANGED,
                             target,
                             fingerprint,
-                            sorted(dict(prior).get("sans") or []),
-                            sorted(dict(now).get("sans") or []),
+                            sorted(_as_map(prior).get("sans") or []),
+                            sorted(_as_map(now).get("sans") or []),
                         )
                     )
-                if dict(prior).get("key_algorithm") != dict(now).get("key_algorithm") or dict(prior).get(
-                    "key_bits"
-                ) != dict(now).get("key_bits"):
+                if _as_map(prior).get("key_algorithm") != _as_map(now).get("key_algorithm") or _as_map(
+                    prior
+                ).get("key_bits") != _as_map(now).get("key_bits"):
                     changes.append(
                         self._change(
                             ChangeType.KEY_ALGORITHM_CHANGED,
                             target,
                             fingerprint,
                             {
-                                "algorithm": dict(prior).get("key_algorithm"),
-                                "bits": dict(prior).get("key_bits"),
+                                "algorithm": _as_map(prior).get("key_algorithm"),
+                                "bits": _as_map(prior).get("key_bits"),
                             },
-                            {"algorithm": dict(now).get("key_algorithm"), "bits": dict(now).get("key_bits")},
+                            {
+                                "algorithm": _as_map(now).get("key_algorithm"),
+                                "bits": _as_map(now).get("key_bits"),
+                            },
                         )
                     )
         return changes
@@ -482,15 +485,15 @@ class ChangeDetector:
             if now is None and prior is not None:
                 changes.append(self._change(ChangeType.IP_REMOVED, target, address, prior, None))
                 continue
-            if dict(prior).get("asn") != dict(now).get("asn"):
+            if _as_map(prior).get("asn") != _as_map(now).get("asn"):
                 changes.append(
                     self._change(
                         ChangeType.ASN_CHANGED,
                         target,
                         address,
-                        dict(prior).get("asn"),
-                        dict(now).get("asn"),
-                        context={"ip": address, "prefix": dict(now).get("prefix", "")},
+                        _as_map(prior).get("asn"),
+                        _as_map(now).get("asn"),
+                        context={"ip": address, "prefix": _as_map(now).get("prefix", "")},
                     )
                 )
         return changes
@@ -575,6 +578,11 @@ class ChangeDetector:
                 )
             )
         return changes
+
+
+def _as_map(value: Any) -> dict[str, Any]:
+    """Coerce a snapshot value to a mapping (``{}`` when it is absent)."""
+    return dict(value) if isinstance(value, dict) else {}
 
 
 def _ttl_view(records: Mapping[str, Any]) -> dict[str, Any]:

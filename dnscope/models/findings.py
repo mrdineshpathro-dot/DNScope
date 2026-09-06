@@ -114,7 +114,7 @@ class Finding(SchemaVersioned):
 
     # ------------------------------------------------------------- validation
 
-    def validate(self) -> list[str]:
+    def validation_problems(self) -> list[str]:
         """Return a list of reasons this finding is not reportable.
 
         The rule engine calls this before accepting a finding, which is how
@@ -138,7 +138,7 @@ class Finding(SchemaVersioned):
     @property
     def is_valid(self) -> bool:
         """``True`` when :meth:`validate` reports no problems."""
-        return not self.validate()
+        return not self.validation_problems()
 
     # ----------------------------------------------------------------- helpers
 

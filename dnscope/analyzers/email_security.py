@@ -284,6 +284,8 @@ class SPFParser:
 
     def _extend_addresses(self, root: SPFRecord, hostname: str) -> None:
         """Add the A and AAAA values of ``hostname`` to the authorized list."""
+        if self.engine is None:
+            return
         for rtype in ("A", "AAAA"):
             result = self.engine.query(hostname, rtype)
             if not result.ok:
@@ -732,8 +734,13 @@ def _rsa_key_bits(public_key_b64: str) -> int | None:
         from cryptography.hazmat.primitives.serialization import load_der_public_key
 
         key = load_der_public_key(raw)
-        numbers = key.public_numbers()  # type: ignore[attr-defined]
-        return int(numbers.n).bit_length()
+        # Only RSA keys expose .public_numbers().n; other algorithms fall through
+        # to the DER-size estimate below.
+        numbers = getattr(key, "public_numbers", lambda: None)()
+        modulus = getattr(numbers, "n", None)
+        if modulus is None:
+            return _der_bit_size_fallback(raw)
+        return int(modulus).bit_length()
     except Exception:
         return _der_bit_size_fallback(raw)
 

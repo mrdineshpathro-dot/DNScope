@@ -387,8 +387,8 @@ class Graph(BaseModel):
 
     # ------------------------------------------------------------------ output
 
-    def counts(self) -> dict[str, int]:
-        """Node/edge counts plus per-kind node counts."""
+    def counts(self) -> dict[str, Any]:
+        """Node/edge counts plus the per-kind and per-relation breakdowns."""
         by_kind: dict[str, int] = defaultdict(int)
         for node in self.nodes.values():
             by_kind[node.kind] += 1
@@ -478,7 +478,13 @@ class Graph(BaseModel):
     def __len__(self) -> int:  # pragma: no cover - convenience
         return len(self.nodes)
 
-    def __iter__(self) -> Iterator[GraphNode]:  # pragma: no cover - convenience
+    def iter_nodes(self) -> Iterator[GraphNode]:
+        """Iterate the graph's nodes.
+
+        Deliberately a named method rather than ``__iter__``: overriding
+        ``__iter__`` on a Pydantic model replaces the key/value iteration that
+        ``dict(model)`` relies on, which made ``dict(graph)`` raise.
+        """
         return iter(self.nodes.values())
 
 

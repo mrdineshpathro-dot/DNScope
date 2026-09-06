@@ -89,7 +89,7 @@ class Snapshot(SchemaVersioned):
             f"hosts={len(self.hosts)} certs={len(self.certificates)} hash={self.payload_hash[:12]}"
         )
 
-    def to_dict(self, *, include_payload: bool = True) -> dict[str, Any]:
+    def to_dict(self, *, exclude_none: bool = True, include_payload: bool = True) -> dict[str, Any]:
         """JSON-ready dictionary (payload optional, it can be large)."""
         data = {
             "snapshot_id": self.snapshot_id,

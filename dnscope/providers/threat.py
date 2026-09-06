@@ -145,11 +145,7 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
 
 def _vt_indicator(data: dict[str, Any], attributes: dict[str, Any]) -> dict[str, Any]:
     """Build a canonical threat indicator from a VT domain object."""
-    stats = (
-        attributes.get("last_analysis_stats")
-        if isinstance(attributes.get("last_analysis_stats"), dict)
-        else {}
-    )
+    stats = mapping_field(attributes, "last_analysis_stats")
     return {
         "provider": "virustotal",
         "target": coerce_str(data.get("id"), maximum=255),

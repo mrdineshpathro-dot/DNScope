@@ -573,7 +573,7 @@ class DNScopeConfig(BaseModel):
 
     # ------------------------------------------------------------- validation
 
-    def validate(self) -> list[str]:
+    def validation_problems(self) -> list[str]:
         """Return human-readable configuration problems (empty == valid)."""
         problems: list[str] = []
 
@@ -675,7 +675,7 @@ class DNScopeConfig(BaseModel):
 
     def assert_valid(self) -> None:
         """Raise :class:`ConfigurationError` when the configuration is invalid."""
-        problems = self.validate()
+        problems = self.validation_problems()
         if problems:
             raise ConfigurationError(
                 "invalid configuration: " + "; ".join(problems[:5]),

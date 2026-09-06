@@ -102,7 +102,7 @@ class AddressRisk(SchemaVersioned):
             found.append("SHARED_HOSTING")
         return found
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, *, exclude_none: bool = True) -> dict[str, Any]:
         """JSON-ready dictionary."""
         data = self.model_dump(mode="json")
         data["flags"] = self.flags()

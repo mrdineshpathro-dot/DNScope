@@ -401,7 +401,7 @@ class RuleEngine:
                 "profile": context.profile,
             },
         )
-        problems = finding.validate()
+        problems = finding.validation_problems()
         if problems:
             self.skipped.setdefault(rule.rule_id, "; ".join(problems))
             _log.debug("rule %s produced an invalid finding: %s", rule.rule_id, problems)

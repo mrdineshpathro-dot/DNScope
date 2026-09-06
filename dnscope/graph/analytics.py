@@ -158,12 +158,12 @@ class GraphAnalytics:
         ranked = sorted(scores.items(), key=lambda item: -item[1])[:limit]
         bridges: list[dict[str, Any]] = []
         for node_id, value in ranked:
-            node = self.graph.node(node_id)
+            graph_node = self.graph.node(node_id)
             bridges.append(
                 {
                     "node_id": node_id,
-                    "kind": node.kind if node else "",
-                    "label": node.label if node else node_id,
+                    "kind": graph_node.kind if graph_node else "",
+                    "label": graph_node.label if graph_node else node_id,
                     "betweenness": round(value, 5),
                 }
             )
