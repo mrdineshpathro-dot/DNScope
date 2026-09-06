@@ -21,6 +21,7 @@ from typing import Any
 from dnscope.models.certificates import CertificateChain, CertificateInfo, TLSHandshakeResult
 from dnscope.models.common import Confidence
 from dnscope.security.ssrf import SSRFValidator
+from dnscope.security.validators import coerce_str
 from dnscope.utils.domains import normalize_hostname
 from dnscope.utils.logging import get_logger
 from dnscope.utils.time_utils import parse_timestamp, utc_now_iso
@@ -163,7 +164,7 @@ def _certificate_from_parsed(parsed: dict[str, Any]) -> CertificateInfo:
     sans = [str(value) for _type, value in parsed.get("subjectAltName", ()) or []]
     return CertificateInfo(
         subject_cn=normalize_hostname(subject_cn),
-        issuer_cn=normalize_hostname(issuer_cn),
+        issuer_cn=coerce_str(issuer_cn, maximum=255).strip(),
         issuer_organization=issuer_org,
         subject_alternative_names=sans,
         serial_number=str(parsed.get("serialNumber", "")),
@@ -212,7 +213,7 @@ def _certificate_from_der(der: bytes, parsed: dict[str, Any] | None) -> Certific
 
     info = CertificateInfo(
         subject_cn=normalize_hostname(str(subject_cn)),
-        issuer_cn=normalize_hostname(str(issuer_cn)),
+        issuer_cn=coerce_str(str(issuer_cn), maximum=255).strip(),
         issuer_organization=str(issuer_org),
         subject_alternative_names=sans,
         serial_number=format(certificate.serial_number, "x"),

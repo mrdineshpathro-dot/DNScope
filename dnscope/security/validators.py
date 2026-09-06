@@ -47,16 +47,27 @@ def ensure_bounded(
     *,
     maximum: int = MAX_LIST_ITEMS,
     name: str = "list",
+    strict: bool = False,
 ) -> list[Any]:
-    """Return ``items`` as a list truncated to ``maximum`` entries."""
+    """Return ``items`` as a list truncated to ``maximum`` entries.
+
+    Every caller here is normalizing an *untrusted* provider payload, so the
+    default is to return an empty list for a value that is not a sequence: a
+    malformed response must produce ``ok=False``, never an exception that
+    escapes ``normalize()``. Pass ``strict=True`` to raise instead.
+    """
     if items is None:
         return []
     if isinstance(items, (str, bytes)):
-        raise ImportError_(f"{name} must be a list, got a string")
+        if strict:
+            raise ImportError_(f"{name} must be a list, got a string")
+        return []
     try:
         sequence = list(items)
     except TypeError as exc:
-        raise ImportError_(f"{name} is not iterable") from exc
+        if strict:
+            raise ImportError_(f"{name} is not iterable") from exc
+        return []
     return sequence[:maximum]
 
 
@@ -130,6 +141,24 @@ def coerce_str(value: Any, *, maximum: int = 4096, default: str = "") -> str:
         return default
     text = value if isinstance(value, str) else str(value)
     return text[:maximum]
+
+
+def mapping_field(container: Any, key: str) -> dict[str, Any]:
+    """Return ``container[key]`` when it is a mapping, otherwise ``{}``.
+
+    Provider payloads are untrusted JSON, so every nested object has to be
+    type-checked before use. Doing it through one helper keeps the narrowing
+    visible to type checkers instead of relying on a repeated ``isinstance``
+    call that they cannot relate to the later access.
+    """
+    value = container.get(key) if isinstance(container, dict) else None
+    return dict(value) if isinstance(value, dict) else {}
+
+
+def list_field(container: Any, key: str) -> list[Any]:
+    """Return ``container[key]`` when it is a list, otherwise ``[]``."""
+    value = container.get(key) if isinstance(container, dict) else None
+    return list(value) if isinstance(value, (list, tuple)) else []
 
 
 def coerce_str_list(value: Any, *, maximum: int = 1_000, item_length: int = 512) -> list[str]:

@@ -19,7 +19,12 @@ from dnscope.exceptions import ProviderResponseError
 from dnscope.models.common import Confidence, EvidenceQuality, SourceRecord
 from dnscope.models.providers import ProviderCapabilities, ProviderQueryResult
 from dnscope.providers.base import DiscoveryProvider, ProviderContext, ThreatProvider
-from dnscope.security.validators import coerce_str, coerce_str_list, ensure_bounded
+from dnscope.security.validators import (
+    coerce_str,
+    coerce_str_list,
+    ensure_bounded,
+    mapping_field,
+)
 from dnscope.utils.domains import normalize_hostname, valid_hostname
 
 
@@ -72,7 +77,7 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
         report = raw.get("domain") if isinstance(raw.get("domain"), dict) else raw
         data = report.get("data") if isinstance(report, dict) else None
         if isinstance(data, dict):
-            attributes = data.get("attributes") if isinstance(data.get("attributes"), dict) else {}
+            attributes = mapping_field(data, "attributes")
             result.threat_indicators.append(_vt_indicator(data, attributes))
             for record in ensure_bounded(attributes.get("last_dns_records"), maximum=500, name="dns_records"):
                 if isinstance(record, dict) and str(record.get("type", "")).upper() == "CNAME":
@@ -84,7 +89,7 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
         for entry in ensure_bounded((subdomains or {}).get("data"), maximum=1_000, name="subdomains"):
             if not isinstance(entry, dict):
                 continue
-            attrs = entry.get("attributes") if isinstance(entry.get("attributes"), dict) else {}
+            attrs = mapping_field(entry, "attributes")
             host = normalize_hostname(coerce_str(attrs.get("id") or entry.get("id"), maximum=255))
             if host and valid_hostname(host):
                 result.hostnames.append(host)
@@ -93,7 +98,7 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
         for entry in ensure_bounded((certificates or {}).get("data"), maximum=200, name="certificates"):
             if not isinstance(entry, dict):
                 continue
-            attrs = entry.get("attributes") if isinstance(entry.get("attributes"), dict) else {}
+            attrs = mapping_field(entry, "attributes")
             result.certificates.append(
                 {
                     "serial_number": coerce_str(attrs.get("serial_number"), maximum=128),
@@ -106,7 +111,9 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
                         maximum=500,
                         item_length=255,
                     ),
-                    "issuer_cn": normalize_hostname(coerce_str(attrs.get("issuer"), maximum=255)),
+                    # An issuer CN is a display name ("Let's Encrypt"), not a
+                    # hostname, so it is trimmed rather than lowercased.
+                    "issuer_cn": coerce_str(attrs.get("issuer"), maximum=255).strip(),
                     "not_before": _epoch_ms(attrs.get("not_before")),
                     "not_after": _epoch_ms(attrs.get("not_after")),
                     "source": self.name,
@@ -287,7 +294,7 @@ class CensysProvider(ThreatProvider):
             result.ok = False
             result.error = "unexpected Censys response shape"
             return result
-        payload = raw.get("result") if isinstance(raw.get("result"), dict) else {}
+        payload = mapping_field(raw, "result")
         if not payload:
             result.ok = False
             result.error = coerce_str(raw.get("error"), maximum=200) or "no Censys data returned"
@@ -296,7 +303,7 @@ class CensysProvider(ThreatProvider):
         autonomous_system = (
             payload.get("autonomous_system") if isinstance(payload.get("autonomous_system"), dict) else {}
         )
-        location = payload.get("location") if isinstance(payload.get("location"), dict) else {}
+        location = mapping_field(payload, "location")
         services: list[dict[str, Any]] = []
         for service in ensure_bounded(payload.get("services"), maximum=100, name="censys.services"):
             if isinstance(service, dict):
@@ -355,7 +362,7 @@ class AbuseIPDBProvider(ThreatProvider):
             result.ok = False
             result.error = "unexpected AbuseIPDB response shape"
             return result
-        data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
+        data = mapping_field(raw, "data")
         if not data:
             errors = raw.get("errors")
             if isinstance(errors, list) and errors:

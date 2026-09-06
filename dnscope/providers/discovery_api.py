@@ -8,7 +8,12 @@ from dnscope.exceptions import ProviderResponseError
 from dnscope.models.common import Confidence, EvidenceQuality, SourceRecord
 from dnscope.models.providers import ProviderCapabilities, ProviderQueryResult
 from dnscope.providers.base import DiscoveryProvider, ProviderContext
-from dnscope.security.validators import coerce_str, coerce_str_list, ensure_bounded
+from dnscope.security.validators import (
+    coerce_str,
+    coerce_str_list,
+    ensure_bounded,
+    mapping_field,
+)
 from dnscope.utils.domains import normalize_hostname, valid_hostname
 
 
@@ -54,7 +59,7 @@ class OTXProvider(DiscoveryProvider):
             result.error = "unexpected OTX response shape"
             return result
 
-        passive = raw.get("passive_dns") if isinstance(raw.get("passive_dns"), dict) else {}
+        passive = mapping_field(raw, "passive_dns")
         hostnames: set[str] = set()
         history: list[dict[str, Any]] = []
         for entry in ensure_bounded(passive.get("passive_dns"), maximum=2_000, name="otx.passive_dns"):
@@ -74,7 +79,7 @@ class OTXProvider(DiscoveryProvider):
                 }
             )
 
-        general = raw.get("general") if isinstance(raw.get("general"), dict) else {}
+        general = mapping_field(raw, "general")
         if general:
             for section in ("other", "subdomains"):
                 for item in coerce_str_list(general.get(section), maximum=2_000, item_length=255):
@@ -158,8 +163,8 @@ class URLScanProvider(DiscoveryProvider):
         for entry in results:
             if not isinstance(entry, dict):
                 continue
-            page = entry.get("page") if isinstance(entry.get("page"), dict) else {}
-            task = entry.get("task") if isinstance(entry.get("task"), dict) else {}
+            page = mapping_field(entry, "page")
+            task = mapping_field(entry, "task")
             host = normalize_hostname(coerce_str(page.get("domain"), maximum=255))
             if host and valid_hostname(host):
                 hostnames.add(host)
@@ -233,7 +238,7 @@ class SecurityTrailsProvider(DiscoveryProvider):
             return result
 
         hostnames: set[str] = set()
-        subdomains = raw.get("subdomains") if isinstance(raw.get("subdomains"), dict) else {}
+        subdomains = mapping_field(raw, "subdomains")
         if subdomains.get("success") is False:
             result.ok = False
             result.error = coerce_str(subdomains.get("message"), maximum=200) or "SecurityTrails error"
@@ -249,7 +254,7 @@ class SecurityTrailsProvider(DiscoveryProvider):
             if valid_hostname(host):
                 hostnames.add(host)
 
-        history = raw.get("history") if isinstance(raw.get("history"), dict) else {}
+        history = mapping_field(raw, "history")
         history_entries: list[dict[str, Any]] = []
         for entry in ensure_bounded(history.get("records"), maximum=1_000, name="st.history"):
             if not isinstance(entry, dict):
