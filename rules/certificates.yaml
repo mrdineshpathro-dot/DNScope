@@ -1,0 +1,75 @@
+# Certificate rules.
+#
+# Certificate data comes from Certificate Transparency logs (no connection to the
+# target) and from TLS handshakes the operator explicitly authorized. A
+# certificate seen in a CT log is not proof it is currently in service, so the
+# findings say where the observation came from.
+category: certificates
+
+rules:
+  - id: CERT-EXPIRY-001
+    title: Certificate has expired
+    logic: cert_expired
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      A certificate covering this domain has passed its notAfter date. Browsers
+      and API clients reject the connection outright, so this is an availability
+      incident as much as a security one.
+    recommendation: >
+      Replace the certificate immediately. If renewal is automated, find out why
+      it failed before it happens again.
+    references:
+      - https://cabforum.org/working-groups/server/baseline-requirements/documents/BR/
+    tags: [availability, tls]
+
+  - id: CERT-EXPIRY-002
+    title: Certificate expires within 30 days
+    logic: cert_expiring_soon
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      A certificate covering this domain expires in less than 30 days. Renewal
+      normally happens well before that, so an unrenewed certificate this close to
+      expiry usually means the automation has stopped working.
+    recommendation: >
+      Renew the certificate and confirm the renewal automation is scheduled and
+      monitored. Escalate to HIGH below 7 days.
+    references:
+      - https://cabforum.org/working-groups/server/baseline-requirements/documents/BR/
+    tags: [availability, tls]
+
+  - id: CERT-KEY-001
+    title: Certificate uses weak key material
+    logic: cert_weak_material
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      A certificate uses a key or signature algorithm below current guidance:
+      RSA or DSA under 2048 bits, EC under 224 bits, or a signature built on MD2,
+      MD5 or SHA-1.
+    recommendation: >
+      Reissue with an RSA 2048+ bit key, ECDSA P-256 or better, and a SHA-256 or
+      stronger signature algorithm.
+    references:
+      - https://cabforum.org/working-groups/server/baseline-requirements/documents/BR/
+      - https://datatracker.ietf.org/doc/html/rfc5280
+    tags: [cryptography, tls]
+
+  - id: CERT-CHAIN-001
+    title: Presented certificate chain did not verify
+    logic: intelligence_observations
+    match: [CERT-UNVERIFIED]
+    severity: HIGH
+    confidence: MEDIUM
+    description: >
+      During an explicitly authorized TLS handshake the presented chain could not
+      be verified against the system trust store. Clients will show a warning or
+      refuse the connection, and it can also mean an incomplete chain is being
+      served.
+    recommendation: >
+      Serve the full chain including intermediates, confirm the certificate matches
+      the hostname, and check that the issuing CA is trusted by your clients.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc5280#section-6
+    tags: [tls]

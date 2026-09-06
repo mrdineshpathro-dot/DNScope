@@ -1,0 +1,206 @@
+# DNScope CDN / WAF / reverse-proxy / DNS-provider fingerprints.
+#
+# All detection here is passive: CNAME chains, authoritative nameservers, PTR
+# records and (when explicitly enabled) TLS metadata. DNScope never sends probe
+# traffic to fingerprint a WAF and never attempts to bypass one.
+
+version: 4
+
+cdn:
+  - name: cloudflare
+    display_name: Cloudflare
+    patterns:
+      - { type: cname, value: ".cdn.cloudflare.net", confidence: high }
+      - { type: ns, value: ".ns.cloudflare.com", confidence: high }
+      - { type: asn, value: "AS13335", confidence: high }
+      - { type: server_header, value: "cloudflare", confidence: medium }
+  - name: akamai
+    display_name: Akamai
+    patterns:
+      - { type: cname, value: ".akamaized.net", confidence: high }
+      - { type: cname, value: ".edgekey.net", confidence: high }
+      - { type: cname, value: ".edgesuite.net", confidence: high }
+      - { type: asn, value: "AS20940", confidence: high }
+  - name: fastly
+    display_name: Fastly
+    patterns:
+      - { type: cname, value: ".fastly.net", confidence: high }
+      - { type: cname, value: ".fastlylb.net", confidence: high }
+      - { type: asn, value: "AS54113", confidence: high }
+  - name: amazon-cloudfront
+    display_name: Amazon CloudFront
+    patterns:
+      - { type: cname, value: ".cloudfront.net", confidence: high }
+  - name: azure-cdn
+    display_name: Azure CDN / Front Door
+    patterns:
+      - { type: cname, value: ".azureedge.net", confidence: high }
+      - { type: cname, value: ".azurefd.net", confidence: high }
+  - name: google-cloud-cdn
+    display_name: Google Cloud CDN
+    patterns:
+      - { type: cname, value: ".googleusercontent.com", confidence: medium }
+      - { type: cname, value: "c.googlesyndication.com", confidence: high }
+  - name: bunny-cdn
+    display_name: Bunny CDN
+    patterns:
+      - { type: cname, value: ".b-cdn.net", confidence: high }
+      - { type: cname, value: ".bunny.net", confidence: high }
+  - name: keycdn
+    display_name: KeyCDN
+    patterns:
+      - { type: cname, value: ".kxcdn.com", confidence: high }
+  - name: cdn77
+    display_name: CDN77
+    patterns:
+      - { type: cname, value: ".cdn77.org", confidence: high }
+      - { type: cname, value: ".rsc.cdn77.org", confidence: high }
+  - name: stackpath
+    display_name: StackPath
+    patterns:
+      - { type: cname, value: ".stackpathcdn.com", confidence: high }
+      - { type: cname, value: ".highwinds.com", confidence: high }
+  - name: imperva-incapsula
+    display_name: Imperva / Incapsula
+    patterns:
+      - { type: cname, value: ".incapdns.net", confidence: high }
+      - { type: cname, value: ".incapsula.com", confidence: high }
+  - name: limeLight
+    display_name: Lumen (Limelight)
+    patterns:
+      - { type: cname, value: ".llnwd.net", confidence: high }
+  - name: alibaba-cdn
+    display_name: Alibaba CDN
+    patterns:
+      - { type: cname, value: ".alikunlun.com", confidence: high }
+      - { type: cname, value: ".kunlun*.com", confidence: medium }
+  - name: tencent-cdn
+    display_name: Tencent CDN
+    patterns:
+      - { type: cname, value: ".cdn.dnsv1.com", confidence: high }
+
+waf:
+  # WAF detection is *inferred* from public CNAME/ASN evidence only. DNScope
+  # does not test, bypass or fingerprint a WAF by sending attack traffic.
+  - name: cloudflare-waf
+    display_name: Cloudflare (proxy + WAF)
+    patterns:
+      - { type: asn, value: "AS13335", confidence: medium }
+      - { type: cname, value: ".cdn.cloudflare.net", confidence: medium }
+    note: Cloudflare proxies traffic; WAF rules may or may not be enabled.
+  - name: akamai-kona
+    display_name: Akamai (Kona / App & API Protector)
+    patterns:
+      - { type: cname, value: ".akamaiedge.net", confidence: medium }
+      - { type: cname, value: ".akamaized.net", confidence: low }
+  - name: imperva
+    display_name: Imperva (Incapsula)
+    patterns:
+      - { type: cname, value: ".incapdns.net", confidence: high }
+  - name: aws-waf
+    display_name: AWS WAF (via ALB/CloudFront)
+    patterns:
+      - { type: cname, value: ".elb.amazonaws.com", confidence: low }
+      - { type: cname, value: ".cloudfront.net", confidence: low }
+    note: >
+      An ALB or CloudFront distribution is a prerequisite for AWS WAF but does
+      not prove a Web ACL is attached.
+  - name: f5-shape
+    display_name: F5 / Shape Security
+    patterns:
+      - { type: cname, value: ".shpws.com", confidence: medium }
+  - name: sucuri
+    display_name: Sucuri
+    patterns:
+      - { type: cname, value: ".sucuri.net", confidence: high }
+      - { type: server_header, value: "sucuri", confidence: medium }
+
+reverse_proxy:
+  - name: nginx
+    display_name: nginx
+    patterns:
+      - { type: server_header, value: "nginx", confidence: medium }
+  - name: apache
+    display_name: Apache
+    patterns:
+      - { type: server_header, value: "apache", confidence: medium }
+  - name: envoy
+    display_name: Envoy
+    patterns:
+      - { type: server_header, value: "envoy", confidence: medium }
+  - name: varnish
+    display_name: Varnish
+    patterns:
+      - { type: header, value: "x-varnish", confidence: medium }
+
+dns_provider:
+  - name: cloudflare-dns
+    display_name: Cloudflare DNS
+    patterns:
+      - { type: ns, value: ".ns.cloudflare.com", confidence: high }
+  - name: aws-route53
+    display_name: Amazon Route 53
+    patterns:
+      - { type: ns, value: ".awsdns-", confidence: high }
+  - name: google-cloud-dns
+    display_name: Google Cloud DNS
+    patterns:
+      - { type: ns, value: ".googledomains.com", confidence: high }
+      - { type: ns, value: "ns-cloud-", confidence: high }
+  - name: azure-dns
+    display_name: Azure DNS
+    patterns:
+      - { type: ns, value: ".azure-dns.com", confidence: high }
+      - { type: ns, value: ".azure-dns.net", confidence: high }
+  - name: ns1
+    display_name: NS1 (IBM)
+    patterns:
+      - { type: ns, value: ".nsone.net", confidence: high }
+  - name: dyn
+    display_name: Oracle Dyn
+    patterns:
+      - { type: ns, value: ".dynect.net", confidence: high }
+  - name: ultra-dns
+    display_name: UltraDNS (Neustar)
+    patterns:
+      - { type: ns, value: ".ultradns.", confidence: high }
+  - name: dns-made-easy
+    display_name: DNS Made Easy
+    patterns:
+      - { type: ns, value: ".dnsmadeeasy.com", confidence: high }
+  - name: dnsimple
+    display_name: DNSimple
+    patterns:
+      - { type: ns, value: ".dnsimple.com", confidence: high }
+  - name: godaddy
+    display_name: GoDaddy DNS
+    patterns:
+      - { type: ns, value: ".domaincontrol.com", confidence: high }
+  - name: namecheap
+    display_name: Namecheap DNS
+    patterns:
+      - { type: ns, value: ".registrar-servers.com", confidence: high }
+  - name: digitalocean-dns
+    display_name: DigitalOcean DNS
+    patterns:
+      - { type: ns, value: ".digitalocean.com", confidence: high }
+  - name: linode-dns
+    display_name: Linode DNS
+    patterns:
+      - { type: ns, value: ".linode.com", confidence: medium }
+  - name: ovh-dns
+    display_name: OVHcloud DNS
+    patterns:
+      - { type: ns, value: ".ovh.net", confidence: medium }
+  - name: hetzner-dns
+    display_name: Hetzner DNS
+    patterns:
+      - { type: ns, value: ".your-server.de", confidence: medium }
+  - name: vercel-dns
+    display_name: Vercel DNS
+    patterns:
+      - { type: ns, value: ".vercel-dns.com", confidence: high }
+  - name: netlify-dns
+    display_name: Netlify DNS
+    patterns:
+      - { type: ns, value: ".netlify.com", confidence: high }

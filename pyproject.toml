@@ -1,0 +1,152 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dnscope"
+version = "4.0.0"
+description = "DNScope - Advanced DNS Attack Surface Intelligence Platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Dinesh Pathro" }]
+keywords = [
+    "dns",
+    "security",
+    "osint",
+    "attack-surface",
+    "reconnaissance",
+    "certificate-transparency",
+    "dnssec",
+    "monitoring",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: Name Service (DNS)",
+    "Topic :: Security",
+    "Topic :: System :: Networking :: Monitoring",
+    "Typing :: Typed",
+]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.7",
+    "dnspython>=2.6",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "PyYAML>=6.0",
+    "Jinja2>=3.1",
+    "cryptography>=42.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+api = ["fastapi>=0.111", "uvicorn[standard]>=0.30"]
+dev = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "hypothesis>=6.100",
+    "coverage>=7.4",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[project.scripts]
+dnscope = "dnscope.cli.app:main"
+
+[project.urls]
+Homepage = "https://github.com/mrdineshpathro-dot/DNScope"
+Repository = "https://github.com/mrdineshpathro-dot/DNScope"
+Issues = "https://github.com/mrdineshpathro-dot/DNScope/issues"
+Author = "https://github.com/mrdineshpathro-dot"
+YouTube = "https://www.youtube.com/@GithubHacker"
+Changelog = "https://github.com/mrdineshpathro-dot/DNScope/blob/main/CHANGELOG.md"
+
+[tool.setuptools.packages.find]
+include = ["dnscope*"]
+
+[tool.setuptools.package-data]
+dnscope = ["py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "network: tests that require outbound network access (deselected by default in CI)",
+    "slow: tests that take a long time to run",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+branch = true
+source = ["dnscope"]
+omit = ["dnscope/api/dashboard_static.py"]
+
+[tool.coverage.report]
+precision = 1
+show_missing = false
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["build", "dist", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "B008",  # typer/click Option() defaults in signatures are idiomatic
+    "SIM108",
+    "RUF012",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011", "S101"]
+"dnscope/plugins/*" = ["B904"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["dnscope"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "."
+files = ["dnscope"]
+ignore_missing_imports = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+no_implicit_optional = true
+check_untyped_defs = false
+disallow_untyped_defs = false
+exclude = ["build", "dist", "\\.venv"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+ignore_errors = true

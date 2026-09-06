@@ -1,0 +1,151 @@
+# DNS configuration rules.
+#
+# Every rule names a registered logic check (see dnscope/rules/logic.py). The
+# severity here is a starting point: a rule pack in a custom directory with the
+# same id overrides it, so a fleet owner can retune without editing code.
+category: dns
+
+rules:
+  - id: DNS-NS-001
+    title: Fewer than two authoritative nameservers
+    logic: dns_ns_insufficient
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      The zone publishes fewer than two NS records. A single authoritative server
+      is a single point of failure for the whole domain: if it is unreachable,
+      the domain cannot be resolved at all.
+    recommendation: >
+      Publish at least two authoritative nameservers, ideally operated by
+      different providers or in different networks.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc1034
+      - https://datatracker.ietf.org/doc/html/rfc7719
+    tags: [availability, delegation]
+
+  - id: DNS-NS-002
+    title: All nameservers hosted by a single provider
+    logic: dns_ns_single_provider
+    severity: LOW
+    confidence: MEDIUM
+    description: >
+      Every authoritative nameserver belongs to the same registrable domain. The
+      delegation is still redundant in name, but a provider-wide outage takes the
+      whole zone down.
+    recommendation: >
+      Consider a secondary DNS provider so the zone survives an outage at the
+      primary. This is a resilience improvement, not a misconfiguration.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7719#section-4.1
+    tags: [availability, concentration]
+
+  - id: DNS-APEX-001
+    title: Apex domain does not resolve
+    logic: dns_apex_missing_address
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      The zone apex returns no A or AAAA record and no MX record. Users typing
+      the bare domain will get a resolution failure.
+    recommendation: >
+      Publish an A and AAAA record at the apex, or an ALIAS/ANAME record if the
+      apex is served by a provider that does not allow direct A records.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc1034#section-3.6.2
+    tags: [availability]
+
+  - id: DNS-AAAA-001
+    title: No IPv6 address published
+    logic: dns_no_ipv6
+    severity: LOW
+    confidence: HIGH
+    description: >
+      The apex publishes A records but no AAAA record, so IPv6-only clients
+      cannot reach it without translation.
+    recommendation: >
+      Publish an AAAA record for the apex. Dual-stack publication is expected by
+      most modern clients and networks.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc8305
+    tags: [availability, ipv6]
+
+  - id: DNS-CNAME-001
+    title: CNAME record at the zone apex
+    logic: dns_cname_at_apex
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      A CNAME at the zone apex conflicts with the SOA and NS records that must
+      also exist there. RFC 1034 forbids this combination and resolvers behave
+      inconsistently when they encounter it.
+    recommendation: >
+      Replace the apex CNAME with an A/AAAA record, or use the provider's ALIAS
+      or ANAME record type which flattens the target at the apex.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc1034#section-3.6.2
+    tags: [correctness]
+
+  - id: DNS-SOA-001
+    title: SOA timers outside the recommended range
+    logic: dns_soa_misconfigured
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      One or more SOA timers are outside the range that keeps a zone resilient.
+      A short expire means secondaries stop answering quickly if the primary is
+      lost; a long refresh means changes propagate slowly.
+    recommendation: >
+      Use a refresh of 1-4 hours, a retry of 15-60 minutes, an expire of at
+      least 1 week, and a negative TTL of 5-60 minutes.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.13
+      - https://datatracker.ietf.org/doc/html/rfc2308
+    tags: [reliability]
+
+  - id: DNS-TTL-001
+    title: Delegation records use a very short TTL
+    logic: dns_ttl_very_low
+    severity: LOW
+    confidence: HIGH
+    description: >
+      NS or SOA records are published with a TTL under five minutes. Delegation
+      data changes rarely, so a very short TTL multiplies the query load on the
+      authoritative servers without a practical benefit.
+    recommendation: >
+      Raise the TTL on NS and SOA records to at least one hour unless a migration
+      is in progress.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc2181#section-5.2
+    tags: [performance]
+
+  - id: DNS-WILDCARD-001
+    title: Zone answers for arbitrary hostnames (wildcard)
+    logic: dns_wildcard_present
+    severity: INFO
+    confidence: MEDIUM
+    description: >
+      The zone answers queries for names that were never created. Wildcards hide
+      typos and expired records, and they inflate subdomain discovery results
+      because every probe appears to exist.
+    recommendation: >
+      Remove the wildcard record if it is not required, or keep an explicit list
+      of the names the wildcard is meant to cover.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc4592
+    tags: [hygiene]
+
+  - id: DNS-HOST-001
+    title: Known hostname no longer resolves
+    logic: dns_host_unreachable
+    severity: MEDIUM
+    confidence: MEDIUM
+    description: >
+      A hostname that a passive source reported now returns NXDOMAIN. The record
+      may have been removed deliberately, or it may be the first stage of a
+      dangling reference that should be cleaned up.
+    recommendation: >
+      Confirm whether the hostname was retired deliberately. Remove references to
+      it from documentation, monitoring and integrations.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc8020
+    tags: [hygiene, lifecycle]

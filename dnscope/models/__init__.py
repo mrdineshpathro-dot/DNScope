@@ -1,0 +1,141 @@
+"""Pydantic models describing DNScope's canonical data schema.
+
+All persisted and exported structures carry ``schema_version`` and
+``tool_version`` so consumers can detect incompatible payloads.
+"""
+
+from dnscope.models.alerts import Alert, AlertChannel, AlertDelivery
+from dnscope.models.assets import (
+    ASNRecord,
+    Asset,
+    AssetKind,
+    AssetSearchHit,
+    CertificateAsset,
+    CloudProvider,
+    HostAsset,
+    IPRecord,
+    NameserverRecord,
+)
+from dnscope.models.certificates import (
+    CertificateChain,
+    CertificateInfo,
+    CertificateSource,
+)
+from dnscope.models.changes import ChangeRecord, ChangeType, EventTimelineEntry
+from dnscope.models.common import (
+    Confidence,
+    ErrorRecord,
+    Evidence,
+    EvidenceQuality,
+    Observation,
+    SchemaVersioned,
+    ScopeStatus,
+    Severity,
+    Significance,
+    SourceRecord,
+)
+from dnscope.models.dns import (
+    DelegationInfo,
+    DNSAnswer,
+    DNSQueryResult,
+    DNSRecord,
+    DNSResponseMeta,
+    DNSSECStatus,
+    DNSTransport,
+    Fingerprint,
+    NameserverProfile,
+    RecordType,
+    ResolverInfo,
+)
+from dnscope.models.email import (
+    CAARecordInfo,
+    DKIMResult,
+    DMARCRecord,
+    EmailSecurityReport,
+    MTASTSResult,
+    SPFRecord,
+    TLSRPTResult,
+)
+from dnscope.models.findings import Finding, FindingStatus, FindingSuppression, RuleReference
+from dnscope.models.jobs import Job, JobPriority, JobState, Schedule
+from dnscope.models.providers import (
+    ProviderBudget,
+    ProviderCapabilities,
+    ProviderCategory,
+    ProviderHealth,
+    ProviderInfo,
+    ProviderQueryResult,
+    ProviderStatus,
+)
+from dnscope.models.reports import ReportMetadata, ScanReproducibility
+from dnscope.models.targets import NormalizedTarget, Target, TargetKind, TargetParseResult
+
+__all__ = [
+    "ASNRecord",
+    "Alert",
+    "AlertChannel",
+    "AlertDelivery",
+    "Asset",
+    "AssetKind",
+    "AssetSearchHit",
+    "CAARecordInfo",
+    "CertificateAsset",
+    "CertificateChain",
+    "CertificateInfo",
+    "CertificateSource",
+    "ChangeRecord",
+    "ChangeType",
+    "CloudProvider",
+    "Confidence",
+    "DKIMResult",
+    "DMARCRecord",
+    "DNSAnswer",
+    "DNSQueryResult",
+    "DNSRecord",
+    "DNSResponseMeta",
+    "DNSSECStatus",
+    "DNSTransport",
+    "DelegationInfo",
+    "EmailSecurityReport",
+    "ErrorRecord",
+    "EventTimelineEntry",
+    "Evidence",
+    "EvidenceQuality",
+    "Finding",
+    "FindingStatus",
+    "FindingSuppression",
+    "Fingerprint",
+    "HostAsset",
+    "IPRecord",
+    "Job",
+    "JobPriority",
+    "JobState",
+    "MTASTSResult",
+    "NameserverProfile",
+    "NameserverRecord",
+    "NormalizedTarget",
+    "Observation",
+    "ProviderBudget",
+    "ProviderCapabilities",
+    "ProviderCategory",
+    "ProviderHealth",
+    "ProviderInfo",
+    "ProviderQueryResult",
+    "ProviderStatus",
+    "RecordType",
+    "ReportMetadata",
+    "ResolverInfo",
+    "RuleReference",
+    "SPFRecord",
+    "ScanReproducibility",
+    "Schedule",
+    "SchemaVersioned",
+    "ScopeStatus",
+    "Severity",
+    "Significance",
+    "SourceRecord",
+    "TLSRPTResult",
+    "Target",
+    "TargetKind",
+    "TargetParseResult",
+]

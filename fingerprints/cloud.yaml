@@ -1,0 +1,498 @@
+# DNScope cloud / hosting provider fingerprints.
+#
+# Every match records the evidence that produced it, and the confidence reflects
+# how specific the signal is:
+#   high   - the hostname can only belong to this provider
+#   medium - the pattern is strongly associated but shared
+#   low    - heuristic; used only when nothing better matches
+#
+# Matches are evaluated in file order; the first match with the highest
+# confidence wins.
+
+version: 4
+providers:
+  - name: amazon-web-services
+    display_name: Amazon Web Services
+    category: cloud
+    homepage: https://aws.amazon.com
+    patterns:
+      - type: cname
+        value: ".amazonaws.com"
+        confidence: high
+        evidence: "CNAME into amazonaws.com"
+      - type: cname
+        value: ".awsdns-"
+        confidence: high
+        evidence: "CNAME into awsdns zone"
+      - type: cname
+        value: ".elb.amazonaws.com"
+        confidence: high
+        evidence: "CNAME into an Elastic Load Balancer"
+      - type: cname
+        value: ".cloudfront.net"
+        confidence: high
+        evidence: "CNAME into Amazon CloudFront"
+        category: cdn
+      - type: cname
+        value: ".elasticbeanstalk.com"
+        confidence: high
+        evidence: "CNAME into Elastic Beanstalk"
+      - type: ptr
+        value: ".compute.amazonaws.com"
+        confidence: high
+        evidence: "reverse DNS in the EC2 compute zone"
+      - type: ptr
+        value: ".compute-1.amazonaws.com"
+        confidence: high
+        evidence: "reverse DNS in the EC2 us-east-1 zone"
+      - type: asn
+        value: "AS16509"
+        confidence: high
+        evidence: "IP belongs to AS16509 (AMAZON-02)"
+      - type: asn
+        value: "AS14618"
+        confidence: high
+        evidence: "IP belongs to AS14618 (AMAZON-AES)"
+      - type: organization
+        value: "amazon"
+        confidence: medium
+        evidence: "IP registry organization mentions Amazon"
+
+  - name: microsoft-azure
+    display_name: Microsoft Azure
+    category: cloud
+    homepage: https://azure.microsoft.com
+    patterns:
+      - type: cname
+        value: ".azurewebsites.net"
+        confidence: high
+        evidence: "CNAME into Azure App Service"
+      - type: cname
+        value: ".cloudapp.azure.com"
+        confidence: high
+        evidence: "CNAME into an Azure cloud service"
+      - type: cname
+        value: ".trafficmanager.net"
+        confidence: high
+        evidence: "CNAME into Azure Traffic Manager"
+      - type: cname
+        value: ".azurefd.net"
+        confidence: high
+        evidence: "CNAME into Azure Front Door"
+        category: cdn
+      - type: cname
+        value: ".azureedge.net"
+        confidence: high
+        evidence: "CNAME into Azure CDN"
+        category: cdn
+      - type: cname
+        value: ".blob.core.windows.net"
+        confidence: high
+        evidence: "CNAME into Azure Blob Storage"
+      - type: cname
+        value: ".database.windows.net"
+        confidence: high
+        evidence: "CNAME into Azure SQL"
+      - type: ptr
+        value: ".cloudapp.azure.com"
+        confidence: high
+        evidence: "reverse DNS in the Azure cloudapp zone"
+      - type: asn
+        value: "AS8075"
+        confidence: high
+        evidence: "IP belongs to AS8075 (MICROSOFT-CORP-MSN-AS-BLOCK)"
+      - type: organization
+        value: "microsoft azure"
+        confidence: medium
+        evidence: "IP registry organization mentions Azure"
+
+  - name: google-cloud
+    display_name: Google Cloud Platform
+    category: cloud
+    homepage: https://cloud.google.com
+    patterns:
+      - type: cname
+        value: ".googleusercontent.com"
+        confidence: high
+        evidence: "CNAME into Google user content"
+      - type: cname
+        value: ".appspot.com"
+        confidence: high
+        evidence: "CNAME into Google App Engine"
+      - type: cname
+        value: ".run.app"
+        confidence: high
+        evidence: "CNAME into Cloud Run"
+      - type: cname
+        value: ".ghs.google.com"
+        confidence: high
+        evidence: "CNAME into Google hosted service"
+      - type: cname
+        value: ".googlehosted.com"
+        confidence: high
+        evidence: "CNAME into Google hosted infrastructure"
+      - type: cname
+        value: "ghs.googlehosted.com"
+        confidence: high
+        evidence: "CNAME into Google hosted service"
+      - type: asn
+        value: "AS15169"
+        confidence: medium
+        evidence: "IP belongs to AS15169 (GOOGLE) - shared with other Google services"
+      - type: organization
+        value: "google"
+        confidence: medium
+        evidence: "IP registry organization mentions Google"
+
+  - name: cloudflare
+    display_name: Cloudflare
+    category: cdn
+    homepage: https://www.cloudflare.com
+    patterns:
+      - type: cname
+        value: ".cdn.cloudflare.net"
+        confidence: high
+        evidence: "CNAME into Cloudflare CDN"
+      - type: cname
+        value: ".cloudflare.com"
+        confidence: high
+        evidence: "CNAME into Cloudflare"
+      - type: cname
+        value: ".cloudflarestream.com"
+        confidence: high
+        evidence: "CNAME into Cloudflare Stream"
+      - type: ns
+        value: ".ns.cloudflare.com"
+        confidence: high
+        evidence: "authoritative nameserver operated by Cloudflare"
+        category: dns
+      - type: asn
+        value: "AS13335"
+        confidence: high
+        evidence: "IP belongs to AS13335 (CLOUDFLARENET)"
+      - type: ptr
+        value: ".cloudflare.com"
+        confidence: medium
+        evidence: "reverse DNS in the Cloudflare zone"
+
+  - name: akamai
+    display_name: Akamai
+    category: cdn
+    homepage: https://www.akamai.com
+    patterns:
+      - type: cname
+        value: ".akamaized.net"
+        confidence: high
+        evidence: "CNAME into Akamai"
+      - type: cname
+        value: ".akamaiedge.net"
+        confidence: high
+        evidence: "CNAME into Akamai Edge"
+      - type: cname
+        value: ".akamai.net"
+        confidence: high
+        evidence: "CNAME into Akamai"
+      - type: cname
+        value: ".edgekey.net"
+        confidence: high
+        evidence: "CNAME into Akamai edgekey"
+      - type: cname
+        value: ".edgesuite.net"
+        confidence: high
+        evidence: "CNAME into Akamai edgesuite"
+      - type: asn
+        value: "AS20940"
+        confidence: high
+        evidence: "IP belongs to AS20940 (AKAMAI-ASN1)"
+      - type: asn
+        value: "AS16625"
+        confidence: high
+        evidence: "IP belongs to AS16625 (AKAMAI-AS)"
+
+  - name: fastly
+    display_name: Fastly
+    category: cdn
+    homepage: https://www.fastly.com
+    patterns:
+      - type: cname
+        value: ".fastly.net"
+        confidence: high
+        evidence: "CNAME into Fastly"
+      - type: cname
+        value: ".fastlylb.net"
+        confidence: high
+        evidence: "CNAME into Fastly load balancer"
+      - type: asn
+        value: "AS54113"
+        confidence: high
+        evidence: "IP belongs to AS54113 (FASTLY)"
+
+  - name: digitalocean
+    display_name: DigitalOcean
+    category: hosting
+    homepage: https://www.digitalocean.com
+    patterns:
+      - type: cname
+        value: ".digitaloceanspaces.com"
+        confidence: high
+        evidence: "CNAME into DigitalOcean Spaces"
+      - type: cname
+        value: ".ondigitalocean.app"
+        confidence: high
+        evidence: "CNAME into a DigitalOcean App Platform app"
+      - type: ptr
+        value: ".digitalocean.com"
+        confidence: high
+        evidence: "reverse DNS in the DigitalOcean zone"
+      - type: asn
+        value: "AS14061"
+        confidence: high
+        evidence: "IP belongs to AS14061 (DIGITALOCEAN-ASN)"
+
+  - name: vercel
+    display_name: Vercel
+    category: hosting
+    homepage: https://vercel.com
+    patterns:
+      - type: cname
+        value: "cname.vercel-dns.com"
+        confidence: high
+        evidence: "CNAME into Vercel DNS"
+      - type: cname
+        value: ".vercel-dns.com"
+        confidence: high
+        evidence: "CNAME into Vercel DNS"
+      - type: cname
+        value: ".vercel.app"
+        confidence: high
+        evidence: "CNAME into vercel.app"
+      - type: ns
+        value: ".vercel-dns.com"
+        confidence: high
+        evidence: "nameserver operated by Vercel"
+        category: dns
+
+  - name: netlify
+    display_name: Netlify
+    category: hosting
+    homepage: https://www.netlify.com
+    patterns:
+      - type: cname
+        value: ".netlify.app"
+        confidence: high
+        evidence: "CNAME into netlify.app"
+      - type: cname
+        value: ".netlify.com"
+        confidence: high
+        evidence: "CNAME into Netlify"
+      - type: cname
+        value: ".netlify-cdn.com"
+        confidence: high
+        evidence: "CNAME into Netlify CDN"
+      - type: ns
+        value: ".netlify.com"
+        confidence: high
+        evidence: "nameserver operated by Netlify"
+        category: dns
+
+  - name: github-pages
+    display_name: GitHub Pages
+    category: hosting
+    homepage: https://pages.github.com
+    patterns:
+      - type: cname
+        value: ".github.io"
+        confidence: high
+        evidence: "CNAME into github.io"
+      - type: cname
+        value: "github.map.fastly.net"
+        confidence: medium
+        evidence: "CNAME into the Fastly front end used by GitHub"
+
+  - name: heroku
+    display_name: Heroku
+    category: hosting
+    homepage: https://www.heroku.com
+    patterns:
+      - type: cname
+        value: ".herokuapp.com"
+        confidence: high
+        evidence: "CNAME into herokuapp.com"
+      - type: cname
+        value: ".herokudns.com"
+        confidence: high
+        evidence: "CNAME into Heroku DNS"
+      - type: cname
+        value: ".herokussl.com"
+        confidence: high
+        evidence: "CNAME into Heroku SSL endpoint"
+
+  - name: oracle-cloud
+    display_name: Oracle Cloud Infrastructure
+    category: cloud
+    homepage: https://www.oracle.com/cloud/
+    patterns:
+      - type: cname
+        value: ".oraclecloud.com"
+        confidence: high
+        evidence: "CNAME into Oracle Cloud"
+      - type: cname
+        value: ".ocp.oraclecloud.com"
+        confidence: high
+        evidence: "CNAME into an Oracle Cloud platform service"
+      - type: ptr
+        value: ".oraclecloud.com"
+        confidence: high
+        evidence: "reverse DNS in the Oracle Cloud zone"
+      - type: asn
+        value: "AS31898"
+        confidence: high
+        evidence: "IP belongs to AS31898 (ORACLE-BMC-31898)"
+
+  - name: ibm-cloud
+    display_name: IBM Cloud
+    category: cloud
+    homepage: https://www.ibm.com/cloud
+    patterns:
+      - type: cname
+        value: ".mybluemix.net"
+        confidence: high
+        evidence: "CNAME into IBM Bluemix"
+      - type: cname
+        value: ".appdomain.cloud"
+        confidence: high
+        evidence: "CNAME into IBM Cloud app domain"
+
+  - name: alibaba-cloud
+    display_name: Alibaba Cloud
+    category: cloud
+    homepage: https://www.alibabacloud.com
+    patterns:
+      - type: cname
+        value: ".alikunlun.com"
+        confidence: high
+        evidence: "CNAME into Alibaba CDN"
+      - type: cname
+        value: ".aliyuncs.com"
+        confidence: high
+        evidence: "CNAME into Alibaba Cloud"
+
+  - name: tencent-cloud
+    display_name: Tencent Cloud
+    category: cloud
+    homepage: https://cloud.tencent.com
+    patterns:
+      - type: cname
+        value: ".cdn.dnsv1.com"
+        confidence: high
+        evidence: "CNAME into Tencent CDN"
+      - type: cname
+        value: ".qcloud.com"
+        confidence: high
+        evidence: "CNAME into Tencent Cloud"
+
+  - name: ovh
+    display_name: OVHcloud
+    category: hosting
+    homepage: https://www.ovhcloud.com
+    patterns:
+      - type: ptr
+        value: ".ovh.net"
+        confidence: medium
+        evidence: "reverse DNS in the OVH zone"
+      - type: asn
+        value: "AS16276"
+        confidence: high
+        evidence: "IP belongs to AS16276 (OVH)"
+
+  - name: hetzner
+    display_name: Hetzner Online
+    category: hosting
+    homepage: https://www.hetzner.com
+    patterns:
+      - type: ptr
+        value: ".your-server.de"
+        confidence: medium
+        evidence: "reverse DNS in the Hetzner zone"
+      - type: asn
+        value: "AS24940"
+        confidence: high
+        evidence: "IP belongs to AS24940 (HETZNER-AS)"
+
+  - name: linode
+    display_name: Linode / Akamai Cloud
+    category: hosting
+    homepage: https://www.linode.com
+    patterns:
+      - type: ptr
+        value: ".linode.com"
+        confidence: medium
+        evidence: "reverse DNS in the Linode zone"
+      - type: asn
+        value: "AS63949"
+        confidence: high
+        evidence: "IP belongs to AS63949 (AKAMAI-LINODE-AP)"
+
+  - name: fly-io
+    display_name: Fly.io
+    category: hosting
+    homepage: https://fly.io
+    patterns:
+      - type: cname
+        value: ".fly.dev"
+        confidence: high
+        evidence: "CNAME into fly.dev"
+
+  - name: render
+    display_name: Render
+    category: hosting
+    homepage: https://render.com
+    patterns:
+      - type: cname
+        value: ".onrender.com"
+        confidence: high
+        evidence: "CNAME into onrender.com"
+
+  - name: surge
+    display_name: Surge.sh
+    category: hosting
+    homepage: https://surge.sh
+    patterns:
+      - type: cname
+        value: ".surge.sh"
+        confidence: high
+        evidence: "CNAME into surge.sh"
+
+  - name: pantheon
+    display_name: Pantheon
+    category: hosting
+    homepage: https://pantheon.io
+    patterns:
+      - type: cname
+        value: ".pantheonsite.io"
+        confidence: high
+        evidence: "CNAME into Pantheon"
+
+  - name: wpengine
+    display_name: WP Engine
+    category: hosting
+    homepage: https://wpengine.com
+    patterns:
+      - type: cname
+        value: ".wpengine.com"
+        confidence: high
+        evidence: "CNAME into WP Engine"
+
+  - name: shopify
+    display_name: Shopify
+    category: hosting
+    homepage: https://www.shopify.com
+    patterns:
+      - type: cname
+        value: "shops.myshopify.com"
+        confidence: high
+        evidence: "CNAME into Shopify"
+      - type: cname
+        value: ".myshopify.com"
+        confidence: high
+        evidence: "CNAME into Shopify"
