@@ -1,0 +1,300 @@
+# DNScope dangling-DNS indicator fingerprints.
+#
+# SAFETY MODEL
+# ------------
+# DNScope never claims, registers, authenticates to or modifies any external
+# resource. These fingerprints are used to raise a *possible dangling DNS*
+# indicator when:
+#
+#   1. a CNAME points at a third-party service, AND
+#   2. the CNAME target does not resolve (NXDOMAIN) or resolves to a documented
+#      "unclaimed" address, AND
+#   3. (optionally, only when HTTP inspection is explicitly enabled) the response
+#      matches the provider's documented "service not found" signature.
+#
+# The output is always `POSSIBLE_DANGLING_DNS` with evidence and a confidence
+# level - never a claim that takeover is possible or was performed.
+
+version: 4
+indicators:
+  - provider: github-pages
+    service: GitHub Pages
+    cname_patterns:
+      - ".github.io"
+      - "github.map.fastly.net"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "There isn't a GitHub Pages site here"
+      - "For root URLs (like http://example.com/) you must provide an index.html file"
+    recommendation: >
+      Remove the CNAME or (re)create the GitHub Pages site. Until then anyone who
+      registers the matching repository could serve content under this hostname.
+
+  - provider: heroku
+    service: Heroku
+    cname_patterns:
+      - ".herokuapp.com"
+      - ".herokudns.com"
+      - ".herokussl.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "No such app"
+      - "no-such-app"
+    recommendation: >
+      Remove the CNAME record or restore the Heroku application name.
+
+  - provider: s3-bucket
+    service: Amazon S3 website bucket
+    cname_patterns:
+      - ".s3.amazonaws.com"
+      - ".s3-website"
+      - "s3-website-"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "NoSuchBucket"
+      - "The specified bucket does not exist"
+    recommendation: >
+      Remove the CNAME or recreate the S3 bucket in the same region.
+
+  - provider: cloudfront
+    service: Amazon CloudFront
+    cname_patterns:
+      - ".cloudfront.net"
+    requires_nxdomain: false
+    confidence: low
+    http_signatures:
+      - "Bad request"
+      - "ERROR: The request could not be satisfied"
+    recommendation: >
+      Verify the CloudFront distribution still exists; a deleted distribution can
+      leave the CNAME pointing at an unclaimed name.
+
+  - provider: azure-app-service
+    service: Azure App Service
+    cname_patterns:
+      - ".azurewebsites.net"
+      - ".scm.azurewebsites.net"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "Error 404 - Web app not found"
+    recommendation: >
+      Remove the CNAME or recreate the Azure App Service with the same name.
+
+  - provider: azure-traffic-manager
+    service: Azure Traffic Manager
+    cname_patterns:
+      - ".trafficmanager.net"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME; an unclaimed Traffic Manager profile can be re-registered.
+
+  - provider: azure-blob
+    service: Azure Blob Storage
+    cname_patterns:
+      - ".blob.core.windows.net"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "BlobNotFound"
+    recommendation: >
+      Remove the CNAME or recreate the storage account.
+
+  - provider: shopify
+    service: Shopify
+    cname_patterns:
+      - "shops.myshopify.com"
+    requires_nxdomain: false
+    confidence: low
+    http_signatures:
+      - "Sorry, this shop is currently unavailable"
+    recommendation: >
+      Confirm the Shopify store still exists before removing the CNAME.
+
+  - provider: fastly
+    service: Fastly
+    cname_patterns:
+      - ".fastly.net"
+    requires_nxdomain: false
+    confidence: low
+    http_signatures:
+      - "Fastly error: unknown domain"
+    recommendation: >
+      Verify the Fastly service configuration for this domain.
+
+  - provider: netlify
+    service: Netlify
+    cname_patterns:
+      - ".netlify.com"
+      - ".netlify.app"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "Not Found - Request ID"
+    recommendation: >
+      Remove the CNAME or re-claim the Netlify site name.
+
+  - provider: surge
+    service: Surge.sh
+    cname_patterns:
+      - ".surge.sh"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "project not found"
+    recommendation: >
+      Remove the CNAME or re-deploy the Surge project.
+
+  - provider: bitbucket
+    service: Bitbucket Cloud
+    cname_patterns:
+      - ".bitbucket.io"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "Repository not found"
+    recommendation: >
+      Remove the CNAME or restore the Bitbucket repository.
+
+  - provider: ghost
+    service: Ghost
+    cname_patterns:
+      - ".ghost.io"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "The thing you were looking for is no longer here"
+    recommendation: >
+      Remove the CNAME or re-create the Ghost publication.
+
+  - provider: tictail
+    service: Tictail (legacy)
+    cname_patterns:
+      - ".tictail.com"
+    requires_nxdomain: true
+    confidence: high
+    http_signatures:
+      - "Starting to Build a Business"
+    recommendation: >
+      Tictail no longer exists; remove the CNAME.
+
+  - provider: campaignmonitor
+    service: Campaign Monitor
+    cname_patterns:
+      - ".createsend.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME or restore the Campaign Monitor landing page.
+
+  - provider: helpjuice
+    service: Helpjuice
+    cname_patterns:
+      - ".helpjuice.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "We could not find what you're looking for"
+    recommendation: >
+      Remove the CNAME or restore the Helpjuice knowledge base.
+
+  - provider: zendesk
+    service: Zendesk
+    cname_patterns:
+      - ".zendesk.com"
+    requires_nxdomain: false
+    confidence: low
+    http_signatures:
+      - "Help Center Closed"
+    recommendation: >
+      Confirm the Zendesk help center is still active.
+
+  - provider: readthedocs
+    service: Read the Docs
+    cname_patterns:
+      - ".readthedocs.io"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME or restore the Read the Docs project.
+
+  - provider: pantheon
+    service: Pantheon
+    cname_patterns:
+      - ".pantheonsite.io"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "404 error unknown site"
+    recommendation: >
+      Remove the CNAME or restore the Pantheon site.
+
+  - provider: wpengine
+    service: WP Engine
+    cname_patterns:
+      - ".wpengine.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME or restore the WP Engine install.
+
+  - provider: statuspage
+    service: Statuspage
+    cname_patterns:
+      - ".statuspage.io"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME or restore the Statuspage site.
+
+  - provider: teamwork
+    service: Teamwork
+    cname_patterns:
+      - ".teamwork.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME or restore the Teamwork project.
+
+  - provider: unbounce
+    service: Unbounce
+    cname_patterns:
+      - ".unbouncepages.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "The requested URL was not found on this server"
+    recommendation: >
+      Remove the CNAME or restore the Unbounce landing page.
+
+  - provider: vercel
+    service: Vercel
+    cname_patterns:
+      - ".vercel.app"
+      - "cname.vercel-dns.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures:
+      - "The deployment could not be found on Vercel"
+    recommendation: >
+      Remove the CNAME or redeploy the Vercel project.
+
+  - provider: render
+    service: Render
+    cname_patterns:
+      - ".onrender.com"
+    requires_nxdomain: true
+    confidence: medium
+    http_signatures: []
+    recommendation: >
+      Remove the CNAME or redeploy the Render service.

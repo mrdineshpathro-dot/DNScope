@@ -1,0 +1,55 @@
+Metadata-Version: 2.4
+Name: dnscope
+Version: 4.0.0
+Summary: DNScope - Advanced DNS Attack Surface Intelligence Platform
+Author: Dinesh Pathro
+License: MIT
+Project-URL: Homepage, https://github.com/mrdineshpathro-dot/DNScope
+Project-URL: Repository, https://github.com/mrdineshpathro-dot/DNScope
+Project-URL: Issues, https://github.com/mrdineshpathro-dot/DNScope/issues
+Project-URL: Author, https://github.com/mrdineshpathro-dot
+Project-URL: YouTube, https://www.youtube.com/@GithubHacker
+Project-URL: Changelog, https://github.com/mrdineshpathro-dot/DNScope/blob/main/CHANGELOG.md
+Keywords: dns,security,osint,attack-surface,reconnaissance,certificate-transparency,dnssec,monitoring
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Information Technology
+Classifier: Intended Audience :: System Administrators
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Internet :: Name Service (DNS)
+Classifier: Topic :: Security
+Classifier: Topic :: System :: Networking :: Monitoring
+Classifier: Typing :: Typed
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: typer>=0.12
+Requires-Dist: rich>=13.7
+Requires-Dist: dnspython>=2.6
+Requires-Dist: httpx>=0.27
+Requires-Dist: pydantic>=2.7
+Requires-Dist: PyYAML>=6.0
+Requires-Dist: Jinja2>=3.1
+Requires-Dist: cryptography>=42.0
+Requires-Dist: python-dotenv>=1.0
+Provides-Extra: api
+Requires-Dist: fastapi>=0.111; extra == "api"
+Requires-Dist: uvicorn[standard]>=0.30; extra == "api"
+Provides-Extra: dev
+Requires-Dist: fastapi>=0.111; extra == "dev"
+Requires-Dist: uvicorn[standard]>=0.30; extra == "dev"
+Requires-Dist: pytest>=8.2; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23; extra == "dev"
+Requires-Dist: hypothesis>=6.100; extra == "dev"
+Requires-Dist: coverage>=7.4; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"
+Requires-Dist: mypy>=1.10; extra == "dev"
+Dynamic: license-file
+
+# DNScope

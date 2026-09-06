@@ -1,0 +1,2 @@
+[console_scripts]
+dnscope = dnscope.cli.app:main
