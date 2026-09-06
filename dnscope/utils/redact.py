@@ -44,6 +44,14 @@ _VALUE_PATTERNS = (
     re.compile(r"\b[A-Za-z0-9_\-]{32,}\b"),
 )
 
+#: Secret-looking URL query parameters (``?api_key=...``, ``&token=...``).
+#: Handled separately from :data:`SECRET_PATTERNS` because the parameter *name*
+#: must survive redaction - only the value is a credential.
+_URL_SECRET_PARAM = re.compile(
+    r"(?i)([?&](?:api[_-]?key|apikey|key|token|access[_-]?token|auth[_-]?token|"
+    r"secret|sig|signature|password|passwd|auth|authorization|x-api-key)=)([^&\s\"\']+)"
+)
+
 #: Compiled patterns re-exported for the logging filter.
 SECRET_PATTERNS = tuple(_VALUE_PATTERNS)
 
@@ -75,8 +83,12 @@ def looks_like_secret(value: Any) -> bool:
 
 
 def redact_text(text: str) -> str:
-    """Replace credential-looking substrings in free text."""
-    redacted = text
+    """Replace credential-looking substrings in free text.
+
+    Runs on every string regardless of length: a short URL such as
+    ``https://api.example.com/?key=abc`` still carries a credential.
+    """
+    redacted = _URL_SECRET_PARAM.sub(lambda match: match.group(1) + REDACTION_PLACEHOLDER, text)
     for pattern in SECRET_PATTERNS:
         redacted = pattern.sub(REDACTION_PLACEHOLDER, redacted)
     return redacted
@@ -106,11 +118,15 @@ def redact_mapping(
             redacted[key] = [
                 redact_mapping(item, sensitive_keys=extra, deep=True)
                 if isinstance(item, Mapping)
-                else (REDACTION_PLACEHOLDER if looks_like_secret(item) else item)
+                else (
+                    REDACTION_PLACEHOLDER
+                    if looks_like_secret(item)
+                    else (redact_text(item) if isinstance(item, str) else item)
+                )
                 for item in value
             ]
         elif isinstance(value, str):
-            redacted[key] = redact_text(value) if len(value) >= 16 else value
+            redacted[key] = redact_text(value)
         else:
             redacted[key] = value
     return redacted

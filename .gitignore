@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Tooling caches
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Local secrets and runtime state - never commit these
+.env
+.env.*
+!.env.example
+*.local.yaml
+dnscope.db
+dnscope.db-wal
+dnscope.db-shm
+*.sqlite3
+reports/
+output/
+checkpoints/
+
+# Arena/agent scratch
+.arena/
