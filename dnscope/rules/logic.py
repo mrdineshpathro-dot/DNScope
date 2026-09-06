@@ -15,7 +15,8 @@ of a confident claim.
 
 from __future__ import annotations
 
-from typing import Any, Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from dnscope.rules.context import RuleHit, ScanContext
 from dnscope.utils.domains import normalize_hostname, registered_domain
@@ -226,7 +227,7 @@ def dns_soa_misconfigured(context: ScanContext) -> list[RuleHit] | None:
 @logic("dns_ttl_very_low")
 def dns_ttl_very_low(context: ScanContext) -> list[RuleHit] | None:
     """Stable records published with an unusually short TTL."""
-    records = [record for record in context.records("NS") + context.records("SOA")]
+    records = [*context.records("NS"), *context.records("SOA")]
     short = [record for record in records if 0 < int(record.ttl or 0) < 300]
     if not short:
         return None
@@ -934,7 +935,6 @@ def infra_ptr_mismatch(context: ScanContext) -> list[RuleHit] | None:
     for risk in getattr(report, "risks", []) or []:
         if "PTR_FORWARD_MISMATCH" not in risk.flags():
             continue
-        record = report.risk_for(risk.ip)
         hits.append(
             RuleHit(
                 target=risk.ip,

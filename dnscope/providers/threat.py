@@ -118,7 +118,7 @@ class VirusTotalProvider(ThreatProvider, DiscoveryProvider):
         result.hostnames = sorted({h for h in result.hostnames if h})
         return result
 
-    def _client(self, context: ProviderContext):  # noqa: ANN201 - typed by SafeHTTPClient
+    def _client(self, context: ProviderContext):
         client = context.http
         if client is None:
             raise ProviderResponseError("virustotal requires an HTTP client in the context")

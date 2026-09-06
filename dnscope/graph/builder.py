@@ -6,7 +6,8 @@ edges, so the rest of DNScope can treat the graph as an opaque structure.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from dnscope.graph.model import EdgeType, Graph, NodeKind
 from dnscope.models.common import EvidenceQuality

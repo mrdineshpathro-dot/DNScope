@@ -253,13 +253,13 @@ def as_completed_bounded(
 class AsyncStopwatch:
     """Context manager measuring elapsed wall-clock time."""
 
-    __slots__ = ("elapsed", "_start")
+    __slots__ = ("_start", "elapsed")
 
     def __init__(self) -> None:
         self.elapsed = 0.0
         self._start = 0.0
 
-    def __enter__(self) -> "AsyncStopwatch":
+    def __enter__(self) -> AsyncStopwatch:
         self._start = time.monotonic()
         return self
 

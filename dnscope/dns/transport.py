@@ -149,7 +149,7 @@ class DNSTransportLayer:
             )
         except dns.exception.Timeout as exc:
             raise DNSTimeout(f"DoH query to {self.doh_url} timed out") from exc
-        except Exception as exc:  # noqa: BLE001 - httpx/dns exceptions vary
+        except Exception as exc:
             raise DNSTransportError(f"DoH query to {self.doh_url} failed: {exc}") from exc
         return TransportResult(
             response=response,
@@ -175,7 +175,7 @@ class DNSTransportLayer:
             )
         except dns.exception.Timeout as exc:
             raise DNSTimeout(f"DoT query to {target} timed out") from exc
-        except Exception as exc:  # noqa: BLE001 - ssl errors vary by platform
+        except Exception as exc:
             raise DNSTransportError(f"DoT query to {target} failed: {exc}") from exc
         return TransportResult(
             response=response,

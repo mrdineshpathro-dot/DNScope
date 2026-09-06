@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from dnscope.models.providers import ProviderHealth, ProviderInfo, ProviderStatus
 from dnscope.providers.base import Provider
+from dnscope.providers.ct_crtsh import CrtShProvider
 from dnscope.providers.discovery_api import OTXProvider, SecurityTrailsProvider, URLScanProvider
 from dnscope.providers.keyless import CymruASNProvider, HackerTargetProvider, RdapProvider
-from dnscope.providers.ct_crtsh import CrtShProvider
 from dnscope.providers.threat import (
     AbuseIPDBProvider,
     CensysProvider,
@@ -143,9 +144,7 @@ class ProviderRegistry:
             # Keyless DNS-based providers still work offline (no HTTP egress).
             provider = self.get(lowered)
             return provider is not None and provider.name == "team-cymru"
-        if getattr(self.settings, "enabled", True) is False:
-            return False
-        return True
+        return getattr(self.settings, "enabled", True) is not False
 
     def infos(self) -> list[ProviderInfo]:
         """Static info + runtime status for every provider."""

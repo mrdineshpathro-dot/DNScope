@@ -16,7 +16,8 @@ sharing one address.
 from __future__ import annotations
 
 import ipaddress
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from pydantic import Field
 
@@ -293,7 +294,7 @@ class IPIntelligenceEngine:
             return
         try:
             result = provider.query(record.ip, context)
-        except Exception as exc:  # noqa: BLE001 - one bad address must not abort the batch
+        except Exception as exc:
             report.failures[record.ip] = f"ASN lookup failed: {exc}"
             return
         if not result.ok:
@@ -414,8 +415,8 @@ class IPIntelligenceEngine:
 __all__ = [
     "ASN_ZONE",
     "BOGON_ASNS",
+    "UNINFORMATIVE_PTR",
     "AddressRisk",
     "IPIntelligenceEngine",
     "IPIntelligenceReport",
-    "UNINFORMATIVE_PTR",
 ]

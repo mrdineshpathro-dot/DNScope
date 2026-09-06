@@ -7,7 +7,8 @@ actually resolves.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -157,4 +158,4 @@ class ConfidenceScorer:
         }
 
 
-__all__ = ["ConfidenceFactors", "ConfidenceScorer", "SOURCE_QUALITY"]
+__all__ = ["SOURCE_QUALITY", "ConfidenceFactors", "ConfidenceScorer"]

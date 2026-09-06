@@ -9,7 +9,8 @@ limiter so a large domain cannot turn into a flood of queries.
 from __future__ import annotations
 
 import time
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -211,7 +212,7 @@ class DiscoveryPipeline:
         """Run one source, converting crashes into a failure status."""
         try:
             return source.discover(domain)
-        except Exception as exc:  # noqa: BLE001 - one bad source must not abort discovery
+        except Exception as exc:
             _log.warning("discovery source %s failed: %s", source.name, exc)
             status = SourceStatus(source=source.name, kind=source.kind, ok=False, error=str(exc))
             return status

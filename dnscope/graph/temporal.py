@@ -7,8 +7,9 @@ not recorded, it is simply absent from the historical graph.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Any, Iterable
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -48,7 +49,7 @@ class TemporalGraph:
             self.add(edge)
 
     @classmethod
-    def from_rows(cls, rows: Iterable[dict[str, Any]]) -> "TemporalGraph":
+    def from_rows(cls, rows: Iterable[dict[str, Any]]) -> TemporalGraph:
         """Build from database rows produced by :mod:`dnscope.storage`."""
         return cls(rows)
 
@@ -153,9 +154,7 @@ class TemporalGraph:
         """Return ``True`` when the observation window covers ``when``."""
         if edge.first_seen and when < edge.first_seen:
             return False
-        if edge.last_seen and when > edge.last_seen:
-            return False
-        return True
+        return not edge.last_seen or when <= edge.last_seen
 
     def _coerce(self, edge: TemporalEdge | dict[str, Any]) -> TemporalEdge:
         """Accept either a model instance or a mapping."""

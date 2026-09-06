@@ -16,7 +16,8 @@ from __future__ import annotations
 
 import base64
 import time
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from dnscope.dns.engine import DNSEngine
 from dnscope.models.common import Confidence, Evidence, SourceRecord
@@ -724,7 +725,7 @@ def _rsa_key_bits(public_key_b64: str) -> int | None:
         return None
     try:
         raw = base64.b64decode(text, validate=False)
-    except Exception:  # noqa: BLE001 - malformed key material
+    except Exception:
         return None
     if len(raw) < 3:
         return None
@@ -735,7 +736,7 @@ def _rsa_key_bits(public_key_b64: str) -> int | None:
         key = load_der_public_key(raw)
         numbers = key.public_numbers()  # type: ignore[attr-defined]
         return int(numbers.n).bit_length()
-    except Exception:  # noqa: BLE001 - ECDSA keys or malformed DER
+    except Exception:
         return _der_bit_size_fallback(raw)
 
 

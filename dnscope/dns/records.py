@@ -26,7 +26,7 @@ def record_type_name(rdtype: Any) -> str:
         return rdtype.upper()
     try:
         return dns.rdatatype.to_text(rdtype).upper()
-    except Exception:  # noqa: BLE001 - unknown numeric type
+    except Exception:
         return f"TYPE{int(rdtype)}"
 
 
@@ -42,7 +42,7 @@ def normalize_rdata(rdtype_name: str, rdata: Any) -> tuple[list[str], dict[str, 
         return presentation, {"raw": presentation[0]}
     try:
         parsed = handler(rdata)
-    except Exception:  # noqa: BLE001 - defensive: keep the presentation form
+    except Exception:
         return presentation, {"raw": presentation[0]}
     return presentation, parsed
 
@@ -260,7 +260,7 @@ def _parse_svcb(rdata: Any) -> dict[str, Any]:
     for key in getattr(rdata, "params", {}) or {}:
         try:
             params[str(key)] = str(rdata.params[key])
-        except Exception:  # noqa: BLE001 - unknown SVCB parameter
+        except Exception:
             params[str(key)] = ""
     return {
         "priority": int(rdata.priority),
@@ -348,7 +348,7 @@ def _estimated_key_bits(key_b64: str, algorithm: int) -> int | None:
         return None
     try:
         raw = base64.b64decode(key_b64)
-    except Exception:  # noqa: BLE001 - malformed key data
+    except Exception:
         return None
     if len(raw) < 3:
         return None

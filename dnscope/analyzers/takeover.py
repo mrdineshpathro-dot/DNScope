@@ -17,13 +17,14 @@ asset owner, not a claim that takeover is possible or was performed.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from dnscope.analyzers.cloud import FingerprintStore
 from dnscope.dns.engine import DNSEngine
-from dnscope.models.common import Confidence, Evidence, SchemaVersioned, SourceRecord
+from dnscope.models.common import Confidence, Evidence, SourceRecord
 from dnscope.utils.domains import normalize_hostname
 from dnscope.utils.time_utils import utc_now_iso
 

@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import Field, field_validator
 
-from dnscope.models.common import Confidence, Observation, SchemaVersioned
+from dnscope.models.common import Confidence, SchemaVersioned
 from dnscope.utils.time_utils import now_utc, parse_timestamp
 
 

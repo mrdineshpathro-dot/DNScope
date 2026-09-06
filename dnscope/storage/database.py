@@ -14,10 +14,11 @@ from __future__ import annotations
 import json
 import sqlite3
 import threading
+from collections.abc import Iterable, Iterator, Sequence
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Iterable, Iterator, Sequence
+from typing import Any
 
 from dnscope.constants import PRODUCT_VERSION
 from dnscope.exceptions import MigrationError, StorageError
@@ -77,10 +78,10 @@ class DNScopeDatabase:
         """Lazily created connection."""
         if self._connection is None:
             self.connect()
-        assert self._connection is not None  # noqa: S101 - guaranteed by connect()
+        assert self._connection is not None
         return self._connection
 
-    def connect(self) -> "DNScopeDatabase":
+    def connect(self) -> DNScopeDatabase:
         """Open (and initialize) the database."""
         with self._lock:
             if self._connection is not None:
@@ -104,7 +105,7 @@ class DNScopeDatabase:
 
     def _apply_pragmas(self) -> None:
         """Apply performance/safety pragmas."""
-        assert self._connection is not None  # noqa: S101
+        assert self._connection is not None
         statements = [
             f"PRAGMA journal_mode={self.journal_mode}",
             f"PRAGMA synchronous={self.synchronous}",
@@ -126,7 +127,7 @@ class DNScopeDatabase:
                 finally:
                     self._connection = None
 
-    def __enter__(self) -> "DNScopeDatabase":
+    def __enter__(self) -> DNScopeDatabase:
         return self.connect()
 
     def __exit__(self, *exc: object) -> None:
@@ -216,7 +217,7 @@ class DNScopeDatabase:
             "events",
             "state_transitions",
         ):
-            row = self.query_one(f"SELECT COUNT(*) AS count FROM {table}")  # noqa: S608 - fixed names
+            row = self.query_one(f"SELECT COUNT(*) AS count FROM {table}")
             counts[table] = int(row["count"]) if row else 0
         size = self.path.stat().st_size if self.path.exists() else 0
         return {
@@ -908,7 +909,7 @@ class DNScopeDatabase:
         # Also match subdomains, IPs and ASNs so the search feels complete.
         for table, column in (("subdomains", "hostname"), ("ip_addresses", "ip"), ("asns", "asn")):
             extra = self.query(
-                f"SELECT * FROM {table} WHERE workspace = ? AND {column} LIKE ? LIMIT ?",  # noqa: S608
+                f"SELECT * FROM {table} WHERE workspace = ? AND {column} LIKE ? LIMIT ?",
                 (self.workspace, needle, limit),
             )
             for row in extra:
@@ -1001,7 +1002,7 @@ class DNScopeDatabase:
 
     def upsert_finding(self, finding: Any) -> None:
         """Store a finding, preserving operator lifecycle state."""
-        from dnscope.models.findings import Finding  # noqa: PLC0415 - avoids an import cycle
+        from dnscope.models.findings import Finding
 
         if not isinstance(finding, Finding):
             raise StorageError("upsert_finding expects a Finding model")
@@ -1124,7 +1125,7 @@ class DNScopeDatabase:
         # SET values first, then the WHERE clause bindings, in SQL order.
         values.extend([self.workspace, identifier, identifier, _as_int(identifier)])
         cursor = self.execute(
-            f"UPDATE findings SET {', '.join(columns)} "  # noqa: S608 - fixed column names
+            f"UPDATE findings SET {', '.join(columns)} "
             "WHERE workspace = ? AND (finding_id = ? OR fingerprint = ? OR id = ?)",
             values,
         )
@@ -1688,7 +1689,7 @@ class DNScopeDatabase:
             params.append(error[:500])
         params.append(job_id)
         self.execute(
-            f"UPDATE monitors SET {', '.join(columns)} WHERE job_id = ?",  # noqa: S608 - fixed columns
+            f"UPDATE monitors SET {', '.join(columns)} WHERE job_id = ?",
             params,
         )
 
@@ -1770,7 +1771,7 @@ class DNScopeDatabase:
             params.append(next_run)
         params.append(schedule_id)
         self.execute(
-            f"UPDATE schedules SET {', '.join(columns)} WHERE schedule_id = ?",  # noqa: S608
+            f"UPDATE schedules SET {', '.join(columns)} WHERE schedule_id = ?",
             params,
         )
 
@@ -1938,14 +1939,14 @@ class DNScopeDatabase:
         with self.transaction() if not dry_run else _noop():
             for table, column in tables.items():
                 row = self.query_one(
-                    f"SELECT COUNT(*) AS count FROM {table} WHERE workspace = ? AND {column} < ?",  # noqa: S608
+                    f"SELECT COUNT(*) AS count FROM {table} WHERE workspace = ? AND {column} < ?",
                     (self.workspace, cutoff),
                 )
                 count = int(row["count"]) if row else 0
                 deleted[table] = count
                 if not dry_run and count:
                     self.execute(
-                        f"DELETE FROM {table} WHERE workspace = ? AND {column} < ?",  # noqa: S608
+                        f"DELETE FROM {table} WHERE workspace = ? AND {column} < ?",
                         (self.workspace, cutoff),
                     )
         if not dry_run:

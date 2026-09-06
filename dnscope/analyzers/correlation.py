@@ -9,7 +9,8 @@ unrelated tenants of the same provider.
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -87,7 +88,7 @@ class CorrelationResult(SchemaVersioned):
 class _Asset:
     """Minimal asset shape the correlation engine understands."""
 
-    __slots__ = ("asns", "cnames", "hostname", "ips", "mail", "nameservers", "organizations", "prefixes", "providers", "certificates")
+    __slots__ = ("asns", "certificates", "cnames", "hostname", "ips", "mail", "nameservers", "organizations", "prefixes", "providers")
 
     def __init__(
         self,

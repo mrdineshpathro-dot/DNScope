@@ -11,7 +11,8 @@ never guesses a rate limit it has not been told.
 from __future__ import annotations
 
 import threading
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from dnscope.models.providers import ProviderBudget
 from dnscope.utils.time_utils import utc_now_iso

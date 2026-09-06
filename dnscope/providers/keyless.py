@@ -94,7 +94,7 @@ class CymruASNProvider(Provider):
 
         try:
             records = resolver.txt(name)
-        except Exception as exc:  # noqa: BLE001 - DNS failures are provider failures
+        except Exception as exc:
             result.ok = False
             result.error = f"ASN lookup failed: {exc}"
             return result

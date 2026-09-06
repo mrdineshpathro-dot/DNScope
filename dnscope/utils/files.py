@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
 import tempfile
 from pathlib import Path
@@ -72,10 +73,8 @@ def write_atomic(path: str | Path, data: str | bytes, *, encoding: str = "utf-8"
             stream.write(data)
         os.replace(handle.name, target)
     except BaseException:
-        try:
+        with contextlib.suppress(OSError):  # best effort cleanup
             os.unlink(handle.name)
-        except OSError:  # pragma: no cover - best effort cleanup
-            pass
         raise
     return target
 

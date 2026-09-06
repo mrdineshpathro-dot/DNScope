@@ -243,7 +243,7 @@ class ProviderQueryResult(SchemaVersioned):
         """Provenance record for attribution in reports."""
         return self.source.model_copy()
 
-    def merge(self, other: "ProviderQueryResult") -> "ProviderQueryResult":
+    def merge(self, other: ProviderQueryResult) -> ProviderQueryResult:
         """Merge another result from the same provider (used for pagination)."""
         if self.provider != other.provider:
             raise ValueError("cannot merge results from different providers")

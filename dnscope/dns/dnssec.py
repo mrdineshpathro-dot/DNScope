@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from dnscope.models.common import Confidence, SchemaVersioned
 from dnscope.models.dns import DNSAnswer, DNSQueryResult, DNSSECStatus
@@ -180,9 +180,12 @@ class DNSSECAnalyzer:
             if covered and covered not in analysis.rrsig_types:
                 analysis.rrsig_types.append(covered)
             expiration = parse_timestamp(str(parsed.get("expiration", "")))
-            if expiration is not None and expiration < now_utc():
-                if covered not in analysis.rrsig_expired:
-                    analysis.rrsig_expired.append(covered)
+            if (
+                expiration is not None
+                and expiration < now_utc()
+                and covered not in analysis.rrsig_expired
+            ):
+                analysis.rrsig_expired.append(covered)
 
     def _find_issues(self, analysis: DNSSECAnalysis) -> None:
         """Attach explainable issues to the analysis."""
@@ -284,7 +287,6 @@ class DNSSECAnalyzer:
 
 def _key_role(parsed: dict[str, Any]) -> str:
     """Classify a DNSKEY as KSK/ZSK from its flags (RFC 4034)."""
-    flags = int(parsed.get("flags", 0))
     zone_key = bool(parsed.get("zone_key"))
     sep = bool(parsed.get("secure_entry_point"))
     if zone_key and sep:
@@ -296,7 +298,7 @@ def _key_role(parsed: dict[str, Any]) -> str:
 
 def describe_algorithm(algorithm: int) -> str:
     """Human-readable DNSSEC algorithm name (re-exported for reports)."""
-    from dnscope.dns.records import _dnssec_algorithm_name  # noqa: PLC0415 - avoids a cycle
+    from dnscope.dns.records import _dnssec_algorithm_name
 
     return _dnssec_algorithm_name(algorithm)
 

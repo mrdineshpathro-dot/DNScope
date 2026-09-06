@@ -8,8 +8,9 @@ mean scanning an organization the operator did not authorize.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any
 
 from pydantic import BaseModel, Field, PrivateAttr
 
@@ -120,7 +121,7 @@ class Scope(BaseModel):
     # ------------------------------------------------------------ construction
 
     @classmethod
-    def from_config(cls, config: Any, *, roots: Iterable[str] = ()) -> "Scope":
+    def from_config(cls, config: Any, *, roots: Iterable[str] = ()) -> Scope:
         """Build a scope from a :class:`dnscope.core.config.ScopeConfig`."""
         scope_config = getattr(config, "scope", config)
         return cls(
@@ -134,7 +135,7 @@ class Scope(BaseModel):
         )
 
     @classmethod
-    def for_target(cls, target: Any, *, include_subdomains: bool = True) -> "Scope":
+    def for_target(cls, target: Any, *, include_subdomains: bool = True) -> Scope:
         """Scope limited to a single target and (optionally) its subdomains."""
         hostname = normalize_hostname(str(getattr(target, "hostname", target)))
         return cls(allowed=[hostname], include_subdomains=include_subdomains, roots=[hostname])

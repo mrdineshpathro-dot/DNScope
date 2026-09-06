@@ -8,9 +8,10 @@ findings that already carry evidence, and reports the arithmetic it used.
 from __future__ import annotations
 
 from collections import Counter
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from dnscope.models.common import Confidence, SchemaVersioned, Severity
 from dnscope.models.findings import Finding

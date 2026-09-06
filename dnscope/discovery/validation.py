@@ -8,7 +8,8 @@ module is the filter that keeps the rest of DNScope honest.
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import BaseModel, Field
 

@@ -14,7 +14,8 @@ fail honestly:
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from pydantic import Field
 
@@ -301,7 +302,7 @@ class ThreatIntelligence:
             return indicator
         try:
             result = provider.query(subject, context)
-        except Exception as exc:  # noqa: BLE001 - provider failures are not fatal
+        except Exception as exc:
             indicator.error = f"{type(exc).__name__}: {exc}"
             return indicator
         indicator.source = SourceRecord(

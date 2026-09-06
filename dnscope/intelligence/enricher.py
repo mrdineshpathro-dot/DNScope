@@ -13,7 +13,8 @@ weighed differently by different policies.
 from __future__ import annotations
 
 import time
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from pydantic import Field
 
@@ -420,7 +421,7 @@ class IntelligenceEngine:
         domain = registered_domain(target) or target
         try:
             data = self.rdap.lookup(domain)
-        except Exception as exc:  # noqa: BLE001 - one source failing must not abort the run
+        except Exception as exc:
             data = RegistrationData(domain=domain)
             data.error = f"{type(exc).__name__}: {exc}"
         self.rdap.with_live_nameservers(data, nameservers)
@@ -456,7 +457,7 @@ class IntelligenceEngine:
             return None
         try:
             result = self.ip_intel.enrich(candidates, target=target, co_hosted=co_hosted)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             report.sources_skipped["ip-intel"] = f"{type(exc).__name__}: {exc}"
             return None
         if result.records:
@@ -480,7 +481,7 @@ class IntelligenceEngine:
                 authorized_hosts=authorized,
                 port=opts.tls_port,
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             report.sources_skipped["certificates"] = f"{type(exc).__name__}: {exc}"
             return None
         if result.certificates:
@@ -512,7 +513,7 @@ class IntelligenceEngine:
             unique = unique[: opts.max_threat_subjects]
         try:
             result = self.threat.enrich(unique, target=target)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             result = ThreatReport(target=target, note=f"{type(exc).__name__}: {exc}")
         if result.available:
             report.sources_consulted.append("threat")

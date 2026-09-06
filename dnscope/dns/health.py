@@ -16,8 +16,9 @@ Three scores are produced, because they answer different questions:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any
 
 from pydantic import BaseModel, Field
 

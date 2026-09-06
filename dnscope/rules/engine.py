@@ -15,10 +15,11 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import Field, field_validator
 
 from dnscope.exceptions import RuleError
 from dnscope.models.common import Confidence, SchemaVersioned, Severity
@@ -167,7 +168,7 @@ class RuleEngine:
         disabled: Sequence[str] = (),
         only: Sequence[str] = (),
         suppressed: Iterable[str] = (),
-    ) -> tuple["RuleEngine", RuleLoadResult]:
+    ) -> tuple[RuleEngine, RuleLoadResult]:
         """Load built-in and custom rule packs.
 
         Later directories win: a custom rule with the same id replaces the
@@ -291,7 +292,7 @@ class RuleEngine:
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
             spec.loader.exec_module(module)
-        except Exception as exc:  # noqa: BLE001 - a broken custom rule must not abort a scan
+        except Exception as exc:
             result.errors.append(f"{path.name}: {type(exc).__name__}: {exc}")
             _log.warning("custom rule module %s failed to load: %s", path.name, exc)
             return
@@ -340,7 +341,7 @@ class RuleEngine:
                 continue
             try:
                 hits = check(context)
-            except Exception as exc:  # noqa: BLE001 - one bad rule must not abort the scan
+            except Exception as exc:
                 self.skipped[rule.rule_id] = f"{type(exc).__name__}: {exc}"
                 _log.warning("rule %s raised: %s", rule.rule_id, exc)
                 continue

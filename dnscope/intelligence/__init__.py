@@ -17,7 +17,7 @@ from dnscope.intelligence.certificates import (
     CertificateReport,
     CertificateSetChange,
 )
-from dnscope.intelligence.enricher import EnrichmentOptions, IntelligenceReport, IntelligenceEngine
+from dnscope.intelligence.enricher import EnrichmentOptions, IntelligenceEngine, IntelligenceReport
 from dnscope.intelligence.ip_intel import (
     AddressRisk,
     IPIntelligenceEngine,

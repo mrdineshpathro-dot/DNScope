@@ -164,7 +164,7 @@ class SafeHTTPClient:
 
     # ------------------------------------------------------------------ config
 
-    def with_limits(self, *, max_body: int | None = None, rate_limit: float | None = None) -> "SafeHTTPClient":
+    def with_limits(self, *, max_body: int | None = None, rate_limit: float | None = None) -> SafeHTTPClient:
         """Return a copy tuned for a specific provider."""
         clone = SafeHTTPClient(
             timeout=self.timeout,
@@ -540,10 +540,10 @@ def default_client(registry: Any, *, provider: str = "") -> SafeHTTPClient:
 
 __all__ = [
     "CircuitBreaker",
-    "default_client",
     "CircuitOpenError",
     "HttpResponse",
     "SafeHTTPClient",
     "SecurityPolicyViolation",
     "client_from_settings",
+    "default_client",
 ]

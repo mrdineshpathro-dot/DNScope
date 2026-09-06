@@ -11,9 +11,10 @@ certificate metadata and scores, never credentials and never raw provider JSON.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from dnscope.models.common import SchemaVersioned
 from dnscope.utils.domains import normalize_hostname

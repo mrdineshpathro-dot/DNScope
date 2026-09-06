@@ -13,10 +13,11 @@ Credentials are never written to logs, reports, the database or exported JSON;
 from __future__ import annotations
 
 import base64
+import contextlib
 import json
 import os
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -55,7 +56,7 @@ KNOWN_SECRETS: dict[str, tuple[str, ...]] = {
 }
 
 
-class SecretSource(str, Enum):
+class SecretSource(StrEnum):
     """Where a secret was found."""
 
     ENVIRONMENT = "environment"
@@ -95,7 +96,7 @@ def _derive_key(material: str) -> bytes:
         candidate = material.strip()
         Fernet(candidate.encode())
         return candidate.encode()
-    except Exception:  # noqa: BLE001 - fall through to derivation
+    except Exception:
         pass
 
     kdf = PBKDF2HMAC(
@@ -195,7 +196,7 @@ class SecretStore:
             return ""
         try:
             value = keyring.get_password(KEYRING_SERVICE, name)
-        except Exception as exc:  # noqa: BLE001 - backends raise assorted errors
+        except Exception as exc:
             _log.debug("keyring lookup failed for %s: %s", name, exc)
             return ""
         return (value or "").strip()
@@ -208,7 +209,7 @@ class SecretStore:
             return False
         try:
             keyring.set_password(KEYRING_SERVICE, name, value)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             _log.warning("keyring write failed: %s", exc)
             return False
         return True
@@ -259,10 +260,8 @@ class SecretStore:
         token = Fernet(key).encrypt(payload)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_bytes(token)
-        try:
+        with contextlib.suppress(OSError):  # platform dependent
             self.path.chmod(0o600)
-        except OSError:  # pragma: no cover - platform dependent
-            pass
         self._file_cache = data
         return self.path
 
@@ -307,7 +306,7 @@ def resolve_secret(name: str, *, default: str = "", store: SecretStore | None = 
         return value
     try:
         return SecretStore().get(name, default=default)
-    except Exception:  # noqa: BLE001 - never fail a scan because of keyring issues
+    except Exception:
         return default
 
 

@@ -17,7 +17,8 @@ Design choices that matter:
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Mapping
+from typing import Any
 
 from pydantic import Field
 
@@ -595,4 +596,4 @@ def rtype_ttl_changed(previous: Mapping[str, Any], current: Mapping[str, Any]) -
     return False
 
 
-__all__ = ["ChangeDetector", "DiffSummary", "TTL_NOISE_RATIO", "rtype_ttl_changed"]
+__all__ = ["TTL_NOISE_RATIO", "ChangeDetector", "DiffSummary", "rtype_ttl_changed"]

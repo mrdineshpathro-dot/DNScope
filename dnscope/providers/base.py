@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import abc
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dnscope.exceptions import ProviderError, ProviderNotConfigured
 from dnscope.models.common import Confidence, EvidenceQuality, SourceRecord
@@ -18,6 +18,10 @@ from dnscope.models.providers import (
 from dnscope.utils.logging import get_logger
 
 _log = get_logger("providers")
+
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from dnscope.providers.http import SafeHTTPClient
 
 
 class ProviderContext:
@@ -45,7 +49,7 @@ class ProviderContext:
     def __init__(
         self,
         *,
-        http: "SafeHTTPClient | None" = None,
+        http: SafeHTTPClient | None = None,
         cache: Any = None,
         settings: Any = None,
         offline: bool = False,
@@ -201,7 +205,7 @@ class Provider(abc.ABC):
             quality=EvidenceQuality.OBSERVED,
         )
 
-    def timed(self) -> "_Timer":
+    def timed(self) -> _Timer:
         """Context manager measuring call latency for the budget engine."""
         return _Timer()
 
@@ -213,13 +217,13 @@ class Provider(abc.ABC):
 class _Timer:
     """Small elapsed-time context manager."""
 
-    __slots__ = ("elapsed_ms", "_start")
+    __slots__ = ("_start", "elapsed_ms")
 
     def __init__(self) -> None:
         self.elapsed_ms = 0.0
         self._start = 0.0
 
-    def __enter__(self) -> "_Timer":
+    def __enter__(self) -> _Timer:
         self._start = time.monotonic()
         return self
 

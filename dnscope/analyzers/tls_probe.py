@@ -13,6 +13,7 @@ Inspection must be explicitly authorized by the operator (``dnscope tls`` or the
 
 from __future__ import annotations
 
+import contextlib
 import socket
 import ssl
 from typing import Any
@@ -85,17 +86,19 @@ class TLSProbe:
             context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         context.minimum_version = DEFAULT_MINIMUM_VERSION
-        try:
+        with contextlib.suppress(NotImplementedError, ssl.SSLError):
+            # Some platforms/OpenSSL builds expose no ALPN support; the handshake
+            # still works, it just negotiates nothing.
             context.set_alpn_protocols(self.alpn)
-        except (NotImplementedError, ssl.SSLError):  # pragma: no cover - platform dependent
-            pass
 
         import time
 
         started = time.monotonic()
         try:
-            with socket.create_connection((hostname, port), timeout=self.timeout) as raw:
-                with context.wrap_socket(raw, server_hostname=sni or None) as connection:
+            with (
+                socket.create_connection((hostname, port), timeout=self.timeout) as raw,
+                context.wrap_socket(raw, server_hostname=sni or None) as connection,
+            ):
                     result.tls_version = connection.version() or ""
                     cipher = connection.cipher()
                     if cipher:
@@ -121,7 +124,7 @@ class TLSProbe:
             result.verify_error = str(exc)
         except ssl.SSLError as exc:
             result.error = f"TLS handshake failed: {exc}"
-        except socket.timeout:
+        except TimeoutError:
             result.error = f"connection to {hostname}:{port} timed out"
         except OSError as exc:
             result.error = f"connection to {hostname}:{port} failed: {exc}"
@@ -178,7 +181,6 @@ def _certificate_from_der(der: bytes, parsed: dict[str, Any] | None) -> Certific
     from cryptography import x509
     from cryptography.hazmat.primitives import hashes
 
-    from dnscope.utils.time_utils import utc_iso
 
     certificate = x509.load_der_x509_certificate(der)
     try:
@@ -195,23 +197,19 @@ def _certificate_from_der(der: bytes, parsed: dict[str, Any] | None) -> Certific
         issuer_org = ""
 
     sans: list[str] = []
-    try:
+    with contextlib.suppress(x509.ExtensionNotFound):
         extension = certificate.extensions.get_extension_for_class(x509.SubjectAlternativeName)
         sans = [str(name.value) for name in extension.value]
-    except x509.ExtensionNotFound:
-        pass
 
     public_key = certificate.public_key()
     key_bits = getattr(public_key, "key_size", None)
     algorithm_name = type(public_key).__name__.replace("PublicKey", "")
 
     basic_constraints_ca = False
-    try:
+    with contextlib.suppress(x509.ExtensionNotFound):
         basic_constraints_ca = bool(
             certificate.extensions.get_extension_for_class(x509.BasicConstraints).value.ca
         )
-    except x509.ExtensionNotFound:
-        pass
 
     info = CertificateInfo(
         subject_cn=normalize_hostname(str(subject_cn)),
@@ -223,7 +221,7 @@ def _certificate_from_der(der: bytes, parsed: dict[str, Any] | None) -> Certific
         fingerprint_sha1=certificate.fingerprint(hashes.SHA1()).hex(),
         not_before=certificate.not_valid_before_utc,
         not_after=certificate.not_valid_after_utc,
-        signature_algorithm=certificate.signature_algorithm_oid._name,  # noqa: SLF001 - no public alias
+        signature_algorithm=certificate.signature_algorithm_oid._name,
         public_key_algorithm=algorithm_name,
         public_key_bits=int(key_bits) if key_bits else None,
         is_ca=basic_constraints_ca,

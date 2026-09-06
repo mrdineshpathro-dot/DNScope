@@ -1,6 +1,6 @@
 """Scoring: risk aggregation and change significance classification."""
 
-from dnscope.scoring.risk import RiskEngine, RiskScore, AttackSurfaceSummary
+from dnscope.scoring.risk import AttackSurfaceSummary, RiskEngine, RiskScore
 from dnscope.scoring.significance import (
     SignificanceEngine,
     SignificanceRule,

@@ -8,14 +8,15 @@ timestamps, which is what makes historical ("as of") queries possible.
 from __future__ import annotations
 
 from collections import defaultdict, deque
+from collections.abc import Iterable, Iterator
 from datetime import datetime
-from typing import Any, Iterable, Iterator
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from dnscope.exceptions import LimitsExceeded
 from dnscope.models.assets import AssetKind, EdgeType
-from dnscope.models.common import EvidenceQuality, SchemaVersioned
+from dnscope.models.common import EvidenceQuality
 from dnscope.utils.time_utils import now_utc, parse_timestamp
 
 #: Node kinds re-exported for graph callers.
@@ -56,7 +57,7 @@ class GraphNode(BaseModel):
         if self.last_seen is None or when > self.last_seen:
             self.last_seen = when
 
-    def merge(self, other: "GraphNode") -> None:
+    def merge(self, other: GraphNode) -> None:
         """Merge attributes and sources from another observation."""
         self.touch(other.last_seen)
         for key, value in (other.attributes or {}).items():
@@ -347,7 +348,7 @@ class Graph(BaseModel):
         groups.sort(key=len, reverse=True)
         return groups
 
-    def subgraph(self, node_ids: Iterable[str]) -> "Graph":
+    def subgraph(self, node_ids: Iterable[str]) -> Graph:
         """Return a new graph containing only ``node_ids`` and internal edges."""
         wanted = {item.strip().lower() for item in node_ids}
         graph = Graph(max_nodes=self.max_nodes, max_edges=self.max_edges)
@@ -362,7 +363,7 @@ class Graph(BaseModel):
         ]
         return graph
 
-    def as_of(self, moment: datetime | str) -> "Graph":
+    def as_of(self, moment: datetime | str) -> Graph:
         """Graph restricted to observations valid at ``moment``."""
         when = parse_timestamp(moment) if isinstance(moment, str) else moment
         if when is None:
@@ -416,7 +417,7 @@ class Graph(BaseModel):
         lines.append("}")
         return "\n".join(lines)
 
-    def merge(self, other: "Graph") -> None:
+    def merge(self, other: Graph) -> None:
         """Merge another graph into this one."""
         for node_id, node in other.nodes.items():
             existing = self.nodes.get(node_id)
@@ -481,9 +482,7 @@ def _valid(first: datetime | None, last: datetime | None, when: datetime) -> boo
     """Return ``True`` when an observation window covers ``when``."""
     if first is not None and when < first:
         return False
-    if last is not None and when > last:
-        return False
-    return True
+    return last is None or when <= last
 
 
 __all__ = [

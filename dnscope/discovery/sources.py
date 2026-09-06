@@ -8,11 +8,11 @@ only has to answer one question: *which names have you seen?*
 from __future__ import annotations
 
 import abc
-import itertools
+from collections.abc import Iterable, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from dnscope.dns.engine import DNSEngine
 from dnscope.models.common import SchemaVersioned
@@ -218,7 +218,7 @@ class CertificateTransparencySource(DiscoverySource):
         context = ProviderContext(http=_default_client(self.registry), offline=False)
         try:
             result = provider.query(domain, context)
-        except Exception as exc:  # noqa: BLE001 - a CT outage must not abort discovery
+        except Exception as exc:
             status.ok = False
             status.error = str(exc)
             status.duration_ms = (time.monotonic() - started) * 1000.0
@@ -273,7 +273,7 @@ class ProviderDiscoverySource(DiscoverySource):
         context = ProviderContext(http=self.http or _default_client(self.registry))
         try:
             result = provider.query(domain, context)
-        except Exception as exc:  # noqa: BLE001 - provider failure is not fatal
+        except Exception as exc:
             status.ok = False
             status.error = str(exc)
             status.duration_ms = (time.monotonic() - started) * 1000.0
@@ -321,7 +321,7 @@ class PassiveDNSSource(DiscoverySource):
         context = ProviderContext(http=self.http or _default_client(self.registry))
         try:
             result = provider.query(domain, context)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             status.ok = False
             status.error = str(exc)
             return status
@@ -409,9 +409,7 @@ class DNSBruteforceSource(DiscoverySource):
         resolved: list[str] = []
         for candidate in candidates:
             result = self.engine.query(candidate, "A")
-            if result.ok and result.answer_count:
-                resolved.append(candidate)
-            elif result.ok and result.cname_chain:
+            if (result.ok and result.answer_count) or (result.ok and result.cname_chain):
                 resolved.append(candidate)
             elif not result.ok and result.status not in ("NXDOMAIN", "ERROR", "TIMEOUT"):
                 status.notes.append(f"{candidate}: {result.status}")

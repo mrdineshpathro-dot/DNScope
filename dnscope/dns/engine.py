@@ -18,8 +18,9 @@ from __future__ import annotations
 
 import random
 import time
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import dns.flags
 import dns.message
@@ -30,22 +31,22 @@ import dns.resolver
 from dnscope.core.config import ResolverConfig
 from dnscope.dns.records import record_type_name, to_dns_record
 from dnscope.dns.transport import DNSTransportLayer, TransportResult
-from dnscope.exceptions import DNSResolutionError, DNSTimeout, DNSError
-from dnscope.models.common import Confidence, EvidenceQuality, SourceRecord
+from dnscope.exceptions import DNSError, DNSResolutionError, DNSTimeout
+from dnscope.models.common import Confidence
 from dnscope.models.dns import (
+    DelegationInfo,
+    DelegationLevel,
     DNSAnswer,
     DNSQueryResult,
     DNSRecord,
     DNSResponseMeta,
     DNSTransport,
-    DelegationInfo,
-    DelegationLevel,
     Fingerprint,
     NameserverProfile,
     ResolverInfo,
 )
 from dnscope.utils.async_utils import BoundedGatherer, GatherError, run_async
-from dnscope.utils.domains import normalize_hostname, parent_domain, registered_domain, reverse_pointer
+from dnscope.utils.domains import normalize_hostname, registered_domain, reverse_pointer
 from dnscope.utils.logging import get_logger
 from dnscope.utils.time_utils import utc_now_iso
 
@@ -121,7 +122,7 @@ class DNSEngine:
         try:
             resolver = dns.resolver.Resolver(configure=True)
             return [str(item) for item in resolver.nameservers]
-        except Exception:  # noqa: BLE001 - no system resolver configured
+        except Exception:
             return []
 
     def active_resolvers(self) -> list[str]:
@@ -212,7 +213,7 @@ class DNSEngine:
                     last_error = str(exc)
                 except DNSError as exc:
                     last_error = str(exc)
-                except Exception as exc:  # noqa: BLE001 - defensive
+                except Exception as exc:
                     last_error = f"{type(exc).__name__}: {exc}"
             if attempt < attempts_allowed - 1:
                 time.sleep(min(2.0, 0.25 * (2**attempt)) * (0.5 + random.random()))
@@ -269,7 +270,7 @@ class DNSEngine:
             payload = _response_from_exception(exc, qname, rdtype_text, dns.rcode.NXDOMAIN)
         except dns.resolver.NoAnswer as exc:
             payload = _response_from_exception(exc, qname, rdtype_text, dns.rcode.NOERROR)
-        except Exception as exc:  # noqa: BLE001 - normalize to DNSError
+        except Exception as exc:
             raise DNSError(f"system resolver failed: {exc}") from exc
         return TransportResult(
             response=payload,
@@ -624,7 +625,7 @@ class DNSEngine:
 
     def is_wildcard_match(self, hostname: str, addresses: Iterable[str]) -> bool:
         """Return ``True`` when ``hostname``'s addresses match the wildcard set."""
-        wildcard_set = {item for item in addresses}
+        wildcard_set = set(addresses)
         if not wildcard_set:
             return False
         result = self.query(hostname, "A", use_cache=True)
@@ -754,7 +755,7 @@ class DNSEngine:
 
     # ------------------------------------------------------------ introspection
 
-    def txt_resolver(self) -> "TxtResolver":
+    def txt_resolver(self) -> TxtResolver:
         """Return a TXT-only facade for DNS-backed providers."""
         return TxtResolver(self)
 
@@ -804,7 +805,7 @@ class DNSEngine:
             return None
         try:
             return self.cache.get(key, namespace="dns")
-        except Exception:  # noqa: BLE001 - cache failures degrade to a miss
+        except Exception:
             return None
 
     def _cache_put(self, key: str, result: DNSQueryResult) -> None:
@@ -814,7 +815,7 @@ class DNSEngine:
         ttl = result.min_ttl()
         try:
             self.cache.set(key, result.to_dict(), ttl=ttl, namespace="dns")
-        except Exception as exc:  # noqa: BLE001 - never fail a scan on cache write
+        except Exception as exc:
             _log.debug("dns cache write failed: %s", exc)
 
 
@@ -898,16 +899,16 @@ class TxtResolver:
     makes it obvious that a provider cannot issue arbitrary queries.
     """
 
-    __slots__ = ("_engine", "lookups", "failures", "not_found")
+    __slots__ = ("_engine", "failures", "lookups", "not_found")
 
-    def __init__(self, engine: "DNSEngine") -> None:
+    def __init__(self, engine: DNSEngine) -> None:
         self._engine = engine
         self.lookups = 0
         self.failures = 0
         self.not_found = 0
 
     @property
-    def engine(self) -> "DNSEngine":
+    def engine(self) -> DNSEngine:
         """The underlying engine (read-only, for diagnostics only)."""
         return self._engine
 

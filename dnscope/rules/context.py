@@ -8,12 +8,13 @@ finding was (or was not) produced.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from dnscope.models.common import Confidence, Evidence, EvidenceQuality, SchemaVersioned, SourceRecord
-from dnscope.utils.domains import normalize_hostname, parent_domain, registered_domain
+from dnscope.utils.domains import normalize_hostname, registered_domain
 from dnscope.utils.time_utils import now_utc, utc_now_iso
 
 

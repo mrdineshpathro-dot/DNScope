@@ -41,7 +41,13 @@ from dnscope.utils.hashing import (
 )
 from dnscope.utils.ids import fingerprint, new_id, short_id
 from dnscope.utils.logging import get_logger, reset_logging_for_tests, setup_logging
-from dnscope.utils.redact import REDACTION_PLACEHOLDER, is_sensitive_key, mask_secret, redact_mapping, redact_text
+from dnscope.utils.redact import (
+    REDACTION_PLACEHOLDER,
+    is_sensitive_key,
+    mask_secret,
+    redact_mapping,
+    redact_text,
+)
 from dnscope.utils.time_utils import (
     format_duration,
     format_elapsed,
@@ -110,7 +116,7 @@ __all__ = [
     "utc_now_iso",
     "valid_hostname",
     "wildcard_strip",
-    "within",
     "with_timeout",
+    "within",
     "write_atomic",
 ]

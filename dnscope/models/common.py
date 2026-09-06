@@ -9,7 +9,7 @@ that produced it).
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum as _StdStrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -18,11 +18,12 @@ from dnscope.constants import PRODUCT_VERSION, SCHEMA_VERSION
 from dnscope.utils.time_utils import parse_timestamp, utc_now_iso
 
 
-class StrEnum(str, Enum):
-    """String enum base that serializes to its value."""
+class StrEnum(_StdStrEnum):
+    """String enum base with the lookup helpers DNScope relies on.
 
-    def __str__(self) -> str:  # pragma: no cover - trivial
-        return self.value
+    Built on :class:`enum.StrEnum` (Python 3.11+); ``coerce`` adds the
+    case-insensitive conversion every model validator uses.
+    """
 
     @classmethod
     def values(cls) -> tuple[str, ...]:
@@ -30,7 +31,7 @@ class StrEnum(str, Enum):
         return tuple(member.value for member in cls)
 
     @classmethod
-    def coerce(cls, value: Any) -> "StrEnum":
+    def coerce(cls, value: Any) -> StrEnum:
         """Case-insensitively convert ``value`` to a member."""
         if isinstance(value, cls):
             return value
@@ -74,7 +75,7 @@ class Severity(StrEnum):
         """Ordinal used for threshold comparisons."""
         return ("INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL").index(self.value)
 
-    def at_least(self, other: "Severity") -> bool:
+    def at_least(self, other: Severity) -> bool:
         """Return ``True`` when this severity meets or exceeds ``other``."""
         return self.rank >= other.rank
 
@@ -114,7 +115,7 @@ class Significance(StrEnum):
     def rank(self) -> int:
         return ("TRIVIAL", "LOW", "MEDIUM", "HIGH", "CRITICAL").index(self.value)
 
-    def at_least(self, other: "Significance") -> bool:
+    def at_least(self, other: Significance) -> bool:
         return self.rank >= other.rank
 
 

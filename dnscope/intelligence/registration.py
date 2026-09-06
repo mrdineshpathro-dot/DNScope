@@ -9,11 +9,12 @@ we actually see in DNS.
 
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from pydantic import Field
 
-from dnscope.models.common import Confidence, EvidenceQuality, SchemaVersioned, SourceRecord
+from dnscope.models.common import SchemaVersioned, SourceRecord
 from dnscope.providers.base import Provider, ProviderContext
 from dnscope.providers.http import default_client
 from dnscope.providers.registry import ProviderRegistry
@@ -262,7 +263,7 @@ class RDAPClient:
         context = self._context()
         try:
             result = provider.query(name, context)
-        except Exception as exc:  # noqa: BLE001 - a provider outage is not fatal
+        except Exception as exc:
             data.error = f"{type(exc).__name__}: {exc}"
             _log.warning("RDAP lookup for %s failed: %s", name, exc)
             return data

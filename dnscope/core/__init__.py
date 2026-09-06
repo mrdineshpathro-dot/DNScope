@@ -1,9 +1,9 @@
 """Core subsystems: configuration, scope, orchestration, caching and audit."""
 
 from dnscope.core.config import (
+    PROFILES,
     DNScopeConfig,
     LimitsConfig,
-    PROFILES,
     ResolverConfig,
     apply_profile,
     default_config,
@@ -13,9 +13,9 @@ from dnscope.core.config import (
 from dnscope.core.scope import Scope, ScopeDecision
 
 __all__ = [
+    "PROFILES",
     "DNScopeConfig",
     "LimitsConfig",
-    "PROFILES",
     "ResolverConfig",
     "Scope",
     "ScopeDecision",

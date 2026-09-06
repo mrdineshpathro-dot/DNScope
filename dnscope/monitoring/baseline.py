@@ -11,11 +11,12 @@ standard, the mapping has to be written down explicitly in the policy pack.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from pydantic import Field
 
-from dnscope.models.common import Confidence, SchemaVersioned
+from dnscope.models.common import SchemaVersioned
 from dnscope.monitoring.snapshot import Snapshot
 from dnscope.utils.ids import new_id
 from dnscope.utils.time_utils import utc_now_iso
@@ -383,10 +384,10 @@ def common_expectations() -> list[Expectation]:
 
 
 __all__ = [
+    "VIOLATION_SEVERITIES",
     "Baseline",
     "BaselineManager",
     "Expectation",
-    "VIOLATION_SEVERITIES",
     "Violation",
     "common_expectations",
 ]

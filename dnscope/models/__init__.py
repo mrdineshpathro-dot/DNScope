@@ -20,7 +20,6 @@ from dnscope.models.certificates import (
     CertificateChain,
     CertificateInfo,
     CertificateSource,
-    TLSHandshakeResult,
 )
 from dnscope.models.changes import ChangeRecord, ChangeType, EventTimelineEntry
 from dnscope.models.common import (
@@ -36,13 +35,13 @@ from dnscope.models.common import (
     SourceRecord,
 )
 from dnscope.models.dns import (
+    DelegationInfo,
     DNSAnswer,
     DNSQueryResult,
     DNSRecord,
     DNSResponseMeta,
     DNSSECStatus,
     DNSTransport,
-    DelegationInfo,
     Fingerprint,
     NameserverProfile,
     RecordType,

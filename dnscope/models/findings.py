@@ -147,9 +147,7 @@ class Finding(SchemaVersioned):
         """``True`` when the finding is neither resolved nor suppressed."""
         if self.status in (FindingStatus.RESOLVED, FindingStatus.SUPPRESSED):
             return False
-        if self.suppression and not self.suppression.is_expired():
-            return False
-        return True
+        return not (self.suppression and not self.suppression.is_expired())
 
     @property
     def severity_rank(self) -> int:

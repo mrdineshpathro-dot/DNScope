@@ -9,8 +9,8 @@ from dnscope.monitoring.baseline import (
 )
 from dnscope.monitoring.detector import ChangeDetector, DiffSummary
 from dnscope.monitoring.scheduler import (
-    Scheduler,
     ScheduleCheck,
+    Scheduler,
     next_run_after,
     validate_interval,
 )

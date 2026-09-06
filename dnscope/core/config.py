@@ -131,7 +131,7 @@ class LimitsConfig(BaseModel):
     global_rate_limit: float = 0.0
 
     @model_validator(mode="after")
-    def _check_positive(self) -> "LimitsConfig":
+    def _check_positive(self) -> LimitsConfig:
         for name in (
             "max_targets",
             "max_subdomains",
@@ -307,7 +307,7 @@ class SecurityConfig(BaseModel):
     resolve_and_validate: bool = True
 
     @model_validator(mode="after")
-    def _coherent(self) -> "SecurityConfig":
+    def _coherent(self) -> SecurityConfig:
         if self.allow_private_networks and self.block_private_networks:
             # ``allow_private_networks`` is the explicit opt-in; it wins, but we
             # log so the operator sees the decision.
@@ -642,7 +642,7 @@ class DNScopeConfig(BaseModel):
                     f"monitoring: interval {seconds}s is below the safe minimum "
                     f"{self.monitoring.min_interval}s"
                 )
-        except Exception as exc:  # noqa: BLE001 - report as a config problem
+        except Exception as exc:
             problems.append(f"monitoring: invalid interval ({exc})")
 
         # policy
@@ -713,7 +713,7 @@ class DNScopeConfig(BaseModel):
             selectors = [item.strip() for item in selectors.split(",")]
         return [str(item).strip().lower() for item in selectors if str(item).strip()]
 
-    def clone(self, **overrides: Any) -> "DNScopeConfig":
+    def clone(self, **overrides: Any) -> DNScopeConfig:
         """Return a copy with nested overrides applied."""
         data = self.model_dump()
         _deep_update(data, overrides)
@@ -847,9 +847,8 @@ PROFILES: dict[str, dict[str, Any]] = {
     },
     "full": {
         "scan": {
-            "record_types": list(
-                [
-                    "A",
+            "record_types": [
+                "A",
                     "AAAA",
                     "CNAME",
                     "MX",
@@ -865,9 +864,8 @@ PROFILES: dict[str, dict[str, Any]] = {
                     "SSHFP",
                     "LOC",
                     "SVCB",
-                    "HTTPS",
-                ]
-            ),
+                "HTTPS",
+            ],
             "dnssec": True,
             "subdomains": True,
             "certificates": True,
@@ -1151,26 +1149,26 @@ def write_example_config(path: str | Path) -> Path:
 
 
 __all__ = [
+    "DEFAULT_DATA_DIR",
+    "ENV_PREFIX",
+    "POLICY_PACKS_PLACEHOLDER",
+    "PROFILES",
+    "USER_CONFIG_PATH",
     "AIConfig",
     "AlertsConfig",
     "CacheConfig",
-    "DEFAULT_DATA_DIR",
     "DNScopeConfig",
     "DatabaseConfig",
     "DiscoveryConfig",
-    "ENV_PREFIX",
     "LimitsConfig",
     "MonitoringConfig",
     "OutputConfig",
-    "POLICY_PACKS_PLACEHOLDER",
-    "PROFILES",
     "PrivacyConfig",
     "ProviderConfig",
     "ResolverConfig",
     "ScanConfig",
     "ScopeConfig",
     "SecurityConfig",
-    "USER_CONFIG_PATH",
     "apply_environment",
     "apply_profile",
     "default_config",

@@ -10,8 +10,9 @@ about them.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
+from typing import Any
 
 from dnscope.models.changes import ChangeRecord, ChangeType
 from dnscope.models.common import Significance
@@ -182,28 +183,29 @@ def _rule_spf_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str,
     so the weakening check has to work on those values rather than on a whole
     record string.
     """
-    field = str(change.field or "")
-    if field == "spf_all":
+    field_name = str(change.field or "")
+    if field_name == "spf_all":
         before = str(_scalar(change.previous)).strip()
         after = str(_scalar(change.current)).strip()
         if before and not after:
             return Significance.HIGH.value, "the SPF 'all' mechanism was removed"
         if not before and after:
             return Significance.MEDIUM.value, f"an SPF 'all' mechanism was added ({after})"
-        before_rank = _SPF_ALL_RANK.get(before.rstrip("all") or "none", 4)
-        after_rank = _SPF_ALL_RANK.get(after.rstrip("all") or "none", 4)
+        # removesuffix (not rstrip) so only the literal "all" is dropped.
+        before_rank = _SPF_ALL_RANK.get(before.removesuffix("all") or "none", 4)
+        after_rank = _SPF_ALL_RANK.get(after.removesuffix("all") or "none", 4)
         if after_rank > before_rank:
             return Significance.CRITICAL.value, f"SPF 'all' qualifier weakened ({before} -> {after})"
         if after_rank < before_rank:
             return Significance.TRIVIAL.value, f"SPF 'all' qualifier tightened ({before} -> {after})"
         return Significance.LOW.value, "SPF 'all' qualifier changed"
-    if field == "spf_found":
+    if field_name == "spf_found":
         if change.previous and not change.current:
             return Significance.CRITICAL.value, "the SPF record was removed"
         if not change.previous and change.current:
             return Significance.MEDIUM.value, "an SPF record was published"
         return Significance.LOW.value, "SPF presence changed"
-    if field == "spf_includes":
+    if field_name == "spf_includes":
         before = {str(item) for item in _as_list(change.previous)}
         after = {str(item) for item in _as_list(change.current)}
         if before and not after:
@@ -213,7 +215,7 @@ def _rule_spf_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str,
         if before - after:
             return Significance.LOW.value, f"SPF include removed ({', '.join(sorted(before - after))})"
         return Significance.TRIVIAL.value, "SPF include list reordered"
-    if field == "spf_lookups":
+    if field_name == "spf_lookups":
         before = _to_float(change.previous)
         after = _to_float(change.current)
         if before is not None and after is not None and after >= 10 > before:
@@ -224,8 +226,8 @@ def _rule_spf_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str,
 
 def _rule_dmarc_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
     """DMARC policy changes tracked field by field."""
-    field = str(change.field or "")
-    if field == "dmarc_policy":
+    field_name = str(change.field or "")
+    if field_name == "dmarc_policy":
         before = str(_scalar(change.previous) or "").lower()
         after = str(_scalar(change.current) or "").lower()
         if before in _DMARC_ENFORCEMENT and after in _DMARC_ENFORCEMENT:
@@ -236,13 +238,13 @@ def _rule_dmarc_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[st
         if before and not after:
             return Significance.CRITICAL.value, "the DMARC policy value was removed"
         return Significance.HIGH.value, "DMARC policy changed"
-    if field == "dmarc_found":
+    if field_name == "dmarc_found":
         if change.previous and not change.current:
             return Significance.CRITICAL.value, "the DMARC record was removed"
         if not change.previous and change.current:
             return Significance.MEDIUM.value, "a DMARC record was published"
         return Significance.LOW.value, "DMARC presence changed"
-    if field == "dmarc_subdomain_policy":
+    if field_name == "dmarc_subdomain_policy":
         before = str(_scalar(change.previous) or "").lower()
         after = str(_scalar(change.current) or "").lower()
         if after == "none" and before in ("quarantine", "reject"):
@@ -250,7 +252,7 @@ def _rule_dmarc_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[st
         if before == "none" and after in ("quarantine", "reject"):
             return Significance.MEDIUM.value, f"subdomain DMARC enforcement added (sp={after})"
         return Significance.MEDIUM.value, "DMARC subdomain policy changed"
-    if field == "dmarc_pct":
+    if field_name == "dmarc_pct":
         before = _to_float(change.previous)
         after = _to_float(change.current)
         if before is None and after is not None and after < 100:
@@ -260,7 +262,7 @@ def _rule_dmarc_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[st
         if before is not None and after is not None and after > before:
             return Significance.TRIVIAL.value, f"DMARC coverage raised ({before:.0f}% -> {after:.0f}%)"
         return Significance.LOW.value, "DMARC percentage changed"
-    if field == "dmarc_rua":
+    if field_name == "dmarc_rua":
         before = {str(item) for item in _as_list(change.previous)}
         after = {str(item) for item in _as_list(change.current)}
         if before and not after:
@@ -290,15 +292,15 @@ def _rule_dkim_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str
 
 def _rule_transport_policy(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
     """MTA-STS and TLS-RPT changes."""
-    field = str(change.field or "")
-    if field == "mta_sts_found" or field == "tls_rpt_found":
-        label = "MTA-STS" if field.startswith("mta_sts") else "TLS-RPT"
+    field_name = str(change.field or "")
+    if field_name in ("mta_sts_found", "tls_rpt_found"):
+        label = "MTA-STS" if field_name.startswith("mta_sts") else "TLS-RPT"
         if change.previous and not change.current:
             return Significance.HIGH.value, f"the {label} record was removed"
         if not change.previous and change.current:
             return Significance.TRIVIAL.value, f"a {label} record was published"
         return Significance.LOW.value, f"{label} presence changed"
-    if field == "mta_sts_mode":
+    if field_name == "mta_sts_mode":
         # An empty mode and an explicit "none" both mean "not enforced", so they
         # are normalized together before comparing - otherwise publishing a
         # policy in none mode would read as a strengthening.

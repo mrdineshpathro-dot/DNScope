@@ -12,7 +12,8 @@ have: *how much of this target's infrastructure sits in a single network?*
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from collections.abc import Iterable, Sequence
+from typing import Any
 
 from pydantic import Field
 
@@ -341,8 +342,8 @@ class ASNIntelligenceEngine:
 
 __all__ = [
     "ASN_ZONE",
+    "CONCENTRATION_THRESHOLD",
     "ASNIntelligence",
     "ASNIntelligenceEngine",
     "ASNSummary",
-    "CONCENTRATION_THRESHOLD",
 ]

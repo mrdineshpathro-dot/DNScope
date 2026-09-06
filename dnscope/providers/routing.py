@@ -9,7 +9,7 @@ and cache state. Requests already served in this scan are never repeated.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 from dnscope.models.providers import ProviderQueryResult, ProviderStatus
 from dnscope.providers.base import Provider, ProviderContext
@@ -242,7 +242,7 @@ class ProviderRouter:
             )
             try:
                 result = provider.query(target, provider_context, **(options or {}))
-            except Exception as exc:  # noqa: BLE001 - provider failures must not abort a scan
+            except Exception as exc:
                 _log.warning("provider %s failed for %s: %s", provider.name, target, exc)
                 self.budget.record_request(provider.name, ok=False, error=str(exc))
                 decision.reason = f"failed: {exc}"
@@ -286,7 +286,7 @@ class ProviderRouter:
             return None
         try:
             return self.cache.get(self._cache_key(capability, target, provider))
-        except Exception:  # noqa: BLE001 - cache failures degrade to a miss
+        except Exception:
             return None
 
     def _cache_put(self, capability: str, target: str, provider: str, result: ProviderQueryResult) -> None:
@@ -299,7 +299,7 @@ class ProviderRouter:
                 result.to_dict(),
                 namespace="provider",
             )
-        except Exception as exc:  # noqa: BLE001 - never fail a scan on cache write
+        except Exception as exc:
             _log.debug("cache write failed: %s", exc)
 
     # ----------------------------------------------------------------- reporting

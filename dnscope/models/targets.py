@@ -13,9 +13,9 @@ from __future__ import annotations
 import ipaddress
 import re
 from typing import Any
-from urllib.parse import unquote, urlsplit
+from urllib.parse import unquote
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 
 from dnscope.exceptions import TargetError
 from dnscope.models.common import SchemaVersioned
@@ -96,7 +96,7 @@ class Target(SchemaVersioned):
     # ------------------------------------------------------------------ parse
 
     @classmethod
-    def parse(cls, value: str, *, origin: str = "cli") -> "Target":
+    def parse(cls, value: str, *, origin: str = "cli") -> Target:
         """Normalize ``value`` into a :class:`Target`.
 
         Raises:
@@ -105,16 +105,16 @@ class Target(SchemaVersioned):
         result = cls.try_parse(value, origin=origin)
         if result.error:
             raise TargetError(result.error, details={"input": value})
-        assert result.target is not None  # noqa: S101 - guaranteed by absence of error
+        assert result.target is not None
         return result.target
 
     @classmethod
-    def try_parse(cls, value: str, *, origin: str = "cli") -> "TargetParseResult":
+    def try_parse(cls, value: str, *, origin: str = "cli") -> TargetParseResult:
         """Non-raising variant of :meth:`parse` used by bulk imports."""
         return cls._parse(value, origin=origin)
 
     @classmethod
-    def _parse(cls, value: str, *, origin: str) -> "TargetParseResult":
+    def _parse(cls, value: str, *, origin: str) -> TargetParseResult:
         if value is None:
             return TargetParseResult(error="target must not be empty")
         text = str(value).strip()
@@ -295,7 +295,7 @@ class Target(SchemaVersioned):
 
         return is_subdomain_of(self.hostname, domain)
 
-    def with_hostname(self, hostname: str) -> "Target":
+    def with_hostname(self, hostname: str) -> Target:
         """Derive a related target (e.g. a discovered subdomain)."""
         return Target.parse(hostname, origin=f"derived:{self.hostname}")
 
@@ -324,7 +324,7 @@ class TargetParseResult(SchemaVersioned):
 
     target: Target | None = None
     error: str = ""
-    input: str = ""  # noqa: A003 - mirrors the user's input for reports
+    input: str = ""
 
     @property
     def ok(self) -> bool:
@@ -345,7 +345,7 @@ class NormalizedTarget(SchemaVersioned):
     is_wildcard: bool = False
 
     @classmethod
-    def from_target(cls, target: Target) -> "NormalizedTarget":
+    def from_target(cls, target: Target) -> NormalizedTarget:
         """Build the summary form of ``target``."""
         return cls(
             input=target.raw_input,

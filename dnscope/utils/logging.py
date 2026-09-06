@@ -21,7 +21,7 @@ _CONFIGURED = False
 class SecretRedactor(logging.Filter):
     """Scrub credential-looking substrings from every log record."""
 
-    def filter(self, record: logging.LogRecord) -> bool:  # noqa: A003 - logging API
+    def filter(self, record: logging.LogRecord) -> bool:
         try:
             message = record.getMessage()
         except Exception:  # pragma: no cover - defensive

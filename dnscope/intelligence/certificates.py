@@ -14,20 +14,21 @@ The engine also diffs two certificate sets so monitoring can report *added*,
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from pydantic import Field
 
 from dnscope.analyzers.tls_probe import TLSProbe, describe_expiry
 from dnscope.models.certificates import CertificateChain, CertificateInfo
 from dnscope.models.changes import ChangeRecord, ChangeType
-from dnscope.models.common import Confidence, EvidenceQuality, SchemaVersioned, SourceRecord
+from dnscope.models.common import SchemaVersioned
 from dnscope.providers.base import ProviderContext
 from dnscope.providers.http import default_client
 from dnscope.providers.registry import ProviderRegistry
 from dnscope.utils.domains import normalize_hostname, wildcard_strip
 from dnscope.utils.logging import get_logger
-from dnscope.utils.time_utils import now_utc, parse_timestamp, utc_now_iso
+from dnscope.utils.time_utils import now_utc, utc_now_iso
 
 _log = get_logger("intelligence.certificates")
 
@@ -357,7 +358,7 @@ class CertificateEngine:
         )
         try:
             result = provider.query(target, context)
-        except Exception as exc:  # noqa: BLE001 - a CT outage must not abort the scan
+        except Exception as exc:
             report.errors.append(f"{self.ct_provider}: {type(exc).__name__}: {exc}")
             _log.warning("CT lookup for %s failed: %s", target, exc)
             return
@@ -398,7 +399,7 @@ class CertificateEngine:
             return
         try:
             chain = self.probe.chain(host, port, authorized=True)
-        except Exception as exc:  # noqa: BLE001 - handshake failures are findings, not crashes
+        except Exception as exc:
             report.errors.append(f"TLS {host}:{port} - {type(exc).__name__}: {exc}")
             return
         report.chain = chain

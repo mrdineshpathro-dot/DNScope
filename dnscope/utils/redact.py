@@ -7,7 +7,8 @@ credential can never leak into an artifact DNScope writes.
 from __future__ import annotations
 
 import re
-from typing import Any, Iterable, Mapping
+from collections.abc import Iterable, Mapping
+from typing import Any
 
 REDACTION_PLACEHOLDER = "[REDACTED]"
 

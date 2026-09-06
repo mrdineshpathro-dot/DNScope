@@ -255,7 +255,7 @@ def wildcard_strip(hostname: str) -> str:
 def looks_like_wildcard_artifact(hostname: str) -> bool:
     """Detect obvious wildcard-response artifacts (e.g. ``*.example.com``)."""
     host = normalize_hostname(hostname)
-    return "*" in host or host.startswith("_") and not valid_hostname(host)
+    return "*" in host or (host.startswith("_") and not valid_hostname(host))
 
 
 def labels(hostname: str) -> list[str]:

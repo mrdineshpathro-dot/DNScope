@@ -14,20 +14,20 @@ Two guardrails are enforced here rather than left to the caller:
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from datetime import timedelta
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from dnscope.constants import MIN_MONITOR_INTERVAL
 from dnscope.exceptions import ConfigurationError
-from dnscope.models.jobs import JobPriority, JobState, MonitorJob, Schedule
+from dnscope.models.jobs import JobPriority, MonitorJob, Schedule
 from dnscope.utils.domains import normalize_hostname
 from dnscope.utils.ids import new_id
 from dnscope.utils.logging import get_logger
 from dnscope.utils.time_utils import (
     now_utc,
-    parse_duration,
     parse_interval,
     parse_timestamp,
     utc_iso,

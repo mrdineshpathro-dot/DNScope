@@ -140,7 +140,7 @@ class DNSRecord(SchemaVersioned):
         """All rdata joined into one string."""
         return ", ".join(self.rdata)
 
-    def matches(self, other: "DNSRecord") -> bool:
+    def matches(self, other: DNSRecord) -> bool:
         """Compare identity + rdata (TTL excluded) for change detection."""
         return (
             self.name.lower() == other.name.lower()
@@ -236,7 +236,7 @@ class DNSQueryResult(SchemaVersioned):
         return value if isinstance(value, str) else ""
 
     @property
-    def data_records(self) -> list["DNSRecord"]:
+    def data_records(self) -> list[DNSRecord]:
         """Records that carry the requested data (signatures excluded).
 
         With DO set, a signed answer returns RRSIG records alongside the real
@@ -247,7 +247,7 @@ class DNSQueryResult(SchemaVersioned):
         return [record for record in self.records if record.rtype not in SIGNATURE_TYPES]
 
     @property
-    def signature_records(self) -> list["DNSRecord"]:
+    def signature_records(self) -> list[DNSRecord]:
         """RRSIG/SIG records attached to this answer."""
         return [record for record in self.records if record.rtype in SIGNATURE_TYPES]
 

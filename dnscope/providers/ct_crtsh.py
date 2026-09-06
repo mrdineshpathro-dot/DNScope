@@ -158,5 +158,5 @@ def _parse_time(value: Any) -> Any:
         return None
     try:
         return parse_timestamp(text)
-    except Exception:  # noqa: BLE001 - malformed provider timestamp
+    except Exception:
         return None
