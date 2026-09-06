@@ -1,0 +1,35 @@
+# Dangling DNS (subdomain takeover) indicators.
+#
+# SAFETY: DNScope is passive here. It never registers, claims, authenticates to
+# or provisions a third-party resource, and it never sends a takeover attempt. A
+# finding means "this CNAME points at a service endpoint that no longer
+# resolves", which is a cleanup signal for the owner of the record. The finding
+# text says so, because a reader must not conclude that takeover was tested or
+# is possible.
+category: takeover
+
+rules:
+  - id: TAKEOVER-001
+    title: Possible dangling CNAME (POSSIBLE_DANGLING_CNAME)
+    logic: takeover_dangling_dns
+    severity: HIGH
+    confidence: MEDIUM
+    description: >
+      A hostname points with a CNAME at a third-party service endpoint that no
+      longer resolves. If the underlying resource can be re-created by anyone, the
+      hostname would then serve content controlled by that party. DNScope reports
+      the indicator only; it does not test, claim or attempt to take over the
+      resource.
+    recommendation: >
+      Remove the CNAME record, or re-create the resource it points at and confirm
+      ownership in the provider's console. Treat this as a cleanup task for the
+      record owner and verify the provider's own documentation before acting.
+    references:
+      - https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/10-Test_for_Subdomain_Takeover
+      - https://datatracker.ietf.org/doc/html/rfc1034#section-3.6.2
+    tags: [dangling-dns, passive-only]
+    # A dangling CNAME is only an indicator, so the finding always carries
+    # needs_verification and the report renders it as "possible".
+    params:
+      requires_owner_verification: true
+      exploitation_attempted: false

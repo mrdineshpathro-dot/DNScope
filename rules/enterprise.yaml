@@ -1,0 +1,108 @@
+# Registration, reputation and operational rules.
+#
+# Registration data comes from RDAP. Where a registry redacts a field (GDPR), the
+# report says the field was withheld instead of guessing at a value.
+category: enterprise
+
+rules:
+  - id: REG-LOCK-001
+    title: Domain registration has no registry lock
+    logic: enterprise_registration_unlocked
+    severity: MEDIUM
+    confidence: MEDIUM
+    description: >
+      The registration carries no clientTransferProhibited (or equivalent) lock.
+      Without a lock, a compromised registrar account or a social-engineering
+      attempt can transfer the domain away.
+    recommendation: >
+      Enable the registrar lock, and where the registry offers it, a registry-level
+      lock that requires out-of-band approval to remove.
+    references:
+      - https://www.icann.org/resources/pages/transfer-policy-2024-01-01-en
+      - https://datatracker.ietf.org/doc/html/rfc9083
+    tags: [registration, account-security]
+
+  - id: REG-EXPIRY-001
+    title: Domain registration expiring or expired
+    logic: enterprise_domain_expiring
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      The registration expires within 30 days, or has already expired. An expired
+      registration can be released and registered by someone else, which is a
+      complete loss of control over the domain.
+    recommendation: >
+      Renew the registration, enable auto-renew, and make sure the payment method
+      and administrative contact are current.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc9083
+    tags: [registration, availability]
+
+  - id: REG-NS-001
+    title: Registry nameservers differ from live DNS
+    logic: enterprise_nameserver_drift
+    severity: MEDIUM
+    confidence: MEDIUM
+    description: >
+      The nameservers published by the registry do not match what the DNS answers
+      show. Registries can lag behind a delegation change, but persistent drift
+      can also mean a delegation was changed somewhere you did not expect.
+    recommendation: >
+      Compare the registrar's nameserver list with the zone's NS records and
+      reconcile them. Re-check after the registry TTL has passed.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc9083
+    tags: [registration, delegation]
+
+  - id: REG-HOLD-001
+    title: Domain registration is on hold
+    logic: intelligence_observations
+    match: [REG-ON-HOLD]
+    severity: HIGH
+    confidence: MEDIUM
+    description: >
+      The registry reports a hold or pending-delete status for the registration.
+      While a hold is in place the domain will not resolve, and a pending-delete
+      status means the name may be released.
+    recommendation: >
+      Contact the registrar immediately to establish why the hold was applied and
+      what is needed to lift it.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc9083#section-4.6
+    tags: [registration, availability]
+
+  - id: REG-NEW-001
+    title: Domain was registered very recently
+    logic: intelligence_observations
+    match: [REG-NEW]
+    severity: LOW
+    confidence: MEDIUM
+    description: >
+      The domain was registered within the last 30 days. Newness on its own is not
+      a problem, but it is context worth recording: newly registered domains have
+      no reputation history.
+    recommendation: >
+      Confirm the registration matches your asset records, especially for domains
+      that look similar to ones you own.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc9083
+    tags: [registration, context]
+
+  - id: THREAT-001
+    title: Third-party reputation feed reports a hostile indicator
+    logic: threat_hostile_reputation
+    severity: HIGH
+    confidence: MEDIUM
+    # Reputation is correlated data, never an observed fact: require the evidence
+    # to be at least CORRELATED quality before the rule may fire.
+    min_quality: CORRELATED
+    description: >
+      A configured reputation provider reports this subject as hostile. Reputation
+      feeds disagree with each other and can be stale, so this is attributed to the
+      provider rather than stated as fact.
+    recommendation: >
+      Corroborate with a second source and with your own logs before acting. If the
+      subject is yours, investigate how it came to be listed.
+    references:
+      - https://www.first.org/global/sigs/cti/
+    tags: [reputation, correlated]

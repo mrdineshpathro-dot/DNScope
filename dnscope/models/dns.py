@@ -236,24 +236,46 @@ class DNSQueryResult(SchemaVersioned):
         return value if isinstance(value, str) else ""
 
     @property
+    def data_records(self) -> list["DNSRecord"]:
+        """Records that carry the requested data (signatures excluded).
+
+        With DO set, a signed answer returns RRSIG records alongside the real
+        data. Those are evidence about the data, not data themselves: including
+        them in ``values`` would make an NS set look like three records and put
+        signature text into SPF strings.
+        """
+        return [record for record in self.records if record.rtype not in SIGNATURE_TYPES]
+
+    @property
+    def signature_records(self) -> list["DNSRecord"]:
+        """RRSIG/SIG records attached to this answer."""
+        return [record for record in self.records if record.rtype in SIGNATURE_TYPES]
+
+    @property
     def answer_count(self) -> int:
-        return len(self.records)
+        """Number of data records in the answer (signatures excluded)."""
+        return len(self.data_records)
 
     @property
     def values(self) -> list[str]:
-        """Flattened rdata values."""
-        return [value for record in self.records for value in record.rdata]
+        """Flattened rdata values (signatures excluded)."""
+        return [value for record in self.data_records for value in record.rdata]
 
     def rdata_set(self) -> set[str]:
-        """Sorted-unique rdata across all answers."""
-        return {value for record in self.records for value in record.rdata}
+        """Unique rdata across all data records."""
+        return {value for record in self.data_records for value in record.rdata}
 
     def min_ttl(self) -> int | None:
-        return min((r.ttl for r in self.records), default=None)
+        """Lowest TTL among the data records."""
+        return min((record.ttl for record in self.data_records), default=None)
 
     def to_dict(self, *, exclude_none: bool = True) -> dict[str, Any]:
         data = super().to_dict(exclude_none=exclude_none)
         return data
+
+
+#: Record types that sign other records rather than carrying data themselves.
+SIGNATURE_TYPES = ("RRSIG", "SIG")
 
 
 class DNSAnswer(SchemaVersioned):

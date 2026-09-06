@@ -54,6 +54,11 @@ class Confidence(StrEnum):
         """Numeric weight used by scoring."""
         return {"HIGH": 1.0, "MEDIUM": 0.6, "LOW": 0.3, "UNKNOWN": 0.1}[self.value]
 
+    @property
+    def rank(self) -> int:
+        """Ordinal (UNKNOWN < LOW < MEDIUM < HIGH) used for sorting and thresholds."""
+        return ("UNKNOWN", "LOW", "MEDIUM", "HIGH").index(self.value)
+
 
 class Severity(StrEnum):
     """Finding severity."""

@@ -1,0 +1,106 @@
+# Infrastructure and hosting rules.
+#
+# These findings are about topology, not exploitation. A shared IP or a
+# concentrated ASN is context for the owner: it explains blast radius. Nothing
+# here probes a service or attempts access.
+category: infrastructure
+
+rules:
+  - id: INFRA-CAA-001
+    title: No CAA restriction on certificate issuance
+    logic: infra_no_caa
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      No CAA record restricts which certificate authorities may issue for this
+      domain (or the records present carry only contactemail/iodef, which do not
+      restrict issuance). Any CA can issue a certificate for the domain.
+    recommendation: >
+      Publish CAA issue records for the CAs you actually use, and an iodef record
+      so misissuance attempts are reported to you.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc8659
+      - https://cabforum.org/working-groups/server/baseline-requirements/documents/BR/
+    tags: [pki]
+
+  - id: INFRA-ADDR-001
+    title: Public hostname resolves to private or reserved space
+    logic: infra_private_address
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      A publicly resolvable name returns an address in private (RFC 1918 / ULA)
+      or reserved space. This is a classic internal-service exposure: the record
+      only works from inside the network, and it leaks internal addressing.
+    recommendation: >
+      Remove the public record, or move it to a split-horizon zone. If the service
+      must be reachable externally, publish a routable address behind a gateway.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc1918
+      - https://datatracker.ietf.org/doc/html/rfc6890
+    tags: [exposure]
+
+  - id: INFRA-PTR-001
+    title: Reverse DNS does not forward-confirm
+    logic: infra_ptr_mismatch
+    severity: LOW
+    confidence: MEDIUM
+    description: >
+      The PTR record for an address does not resolve back to that address. Many
+      mail receivers and monitoring systems treat missing or inconsistent reverse
+      DNS as a signal of poor hygiene, and it complicates incident triage.
+    recommendation: >
+      Configure forward-confirmed reverse DNS (FCrDNS) for addresses that serve
+      traffic, especially mail.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc1033
+    tags: [hygiene]
+
+  - id: INFRA-SHARED-001
+    title: Many hosts share one piece of infrastructure
+    logic: infra_shared_infrastructure
+    severity: INFO
+    confidence: MEDIUM
+    description: >
+      Three or more in-scope hosts share a single IP address, ASN, nameserver or
+      certificate. Shared infrastructure is normal, but it means one change or one
+      incident affects every host in the group.
+    recommendation: >
+      Record the shared dependency in your asset inventory so a change request
+      against it is reviewed against every dependent host.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7719
+    tags: [topology]
+
+  - id: INFRA-ASN-001
+    title: Infrastructure concentrated in a single ASN
+    logic: infra_asn_concentration
+    severity: LOW
+    confidence: MEDIUM
+    description: >
+      Most of the observed addresses belong to one autonomous system. A routing
+      incident, provider outage or policy action against that network affects the
+      majority of the estate at once.
+    recommendation: >
+      Where availability matters, spread critical services across more than one
+      network or provider. This is a resilience observation, not a vulnerability.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc6996
+    tags: [topology, resilience]
+
+  - id: INFRA-BOGON-001
+    title: Address announces a non-routable origin ASN
+    logic: intelligence_observations
+    match: [ASN-BOGON]
+    severity: MEDIUM
+    confidence: MEDIUM
+    description: >
+      An address reports an origin ASN that is reserved for documentation or
+      transition use. Such an announcement is normally a configuration mistake or
+      a sign of a hijacked prefix.
+    recommendation: >
+      Verify the prefix announcement with the network owner and the RIR routing
+      registry before making any change.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc6890
+    tags: [routing]

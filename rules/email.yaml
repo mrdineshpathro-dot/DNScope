@@ -1,0 +1,194 @@
+# Email authentication rules.
+#
+# DNScope never claims DKIM is absent: it only comments on the selectors that
+# were actually queried, and the report lists them. "No DKIM record at the
+# selectors tested" is a statement about the test, not about the domain.
+category: email
+
+rules:
+  - id: EMAIL-SPF-001
+    title: No SPF record published
+    logic: email_no_spf
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      The domain publishes no SPF record. Receiving systems have no way to tell
+      legitimate mail from mail sent by someone using the domain in the envelope.
+    recommendation: >
+      Publish an SPF record listing every legitimate sending service and ending
+      in '-all' once you are confident the list is complete. Start with '~all'
+      during rollout.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7208
+    tags: [anti-spoofing]
+
+  - id: EMAIL-SPF-002
+    title: SPF authorizes any sender
+    logic: email_spf_permissive
+    severity: CRITICAL
+    confidence: HIGH
+    description: >
+      The SPF record's 'all' mechanism authorizes hosts that match nothing else.
+      With '+all' every host on the internet is an approved sender, which makes
+      the record worse than absent because receivers may trust it.
+    recommendation: >
+      Replace '+all' or '?all' with '-all' (reject) or '~all' (softfail) once the
+      include list covers all legitimate senders.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7208#section-5.1
+    tags: [anti-spoofing]
+
+  - id: EMAIL-SPF-003
+    title: SPF record has no 'all' mechanism
+    logic: email_spf_no_all
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      The SPF record lists mechanisms but does not end with an 'all' mechanism and
+      has no redirect modifier. RFC 7208 defaults to neutral in this case, so
+      receivers get no clear instruction for unmatched senders.
+    recommendation: >
+      Add an explicit '-all' or '~all' at the end of the record.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7208#section-4.7
+    tags: [anti-spoofing]
+
+  - id: EMAIL-SPF-004
+    title: SPF exceeds the ten DNS lookup limit
+    logic: email_spf_lookup_limit
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      Expanding the include chain reached the RFC 7208 limit of ten DNS lookups.
+      Receivers that enforce the limit must return PermError, which many treat as
+      a hard fail - so legitimate mail can be rejected.
+    recommendation: >
+      Reduce the number of include directives. Consolidate sending services, or
+      replace rarely used includes with explicit ip4/ip6 ranges where the
+      provider publishes stable ones.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7208#section-4.6.4
+    tags: [anti-spoofing, deliverability]
+
+  - id: EMAIL-SPF-005
+    title: SPF uses the deprecated 'ptr' mechanism
+    logic: email_spf_ptr_mechanism
+    severity: LOW
+    confidence: HIGH
+    description: >
+      The record uses the 'ptr' mechanism, which RFC 7208 marks as deprecated
+      because reverse DNS is expensive to validate and easy to influence.
+    recommendation: >
+      Replace 'ptr' with explicit ip4/ip6 ranges or an include of the provider's
+      SPF record.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7208#section-5.5
+    tags: [anti-spoofing]
+
+  - id: EMAIL-DMARC-001
+    title: No DMARC policy published
+    logic: email_no_dmarc
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      No DMARC record exists at _dmarc, so even when SPF and DKIM fail the
+      receiver has no instruction on what to do. The domain remains usable for
+      spoofing.
+    recommendation: >
+      Publish a DMARC record with a rua address, start at p=none to collect
+      reports, then move to p=quarantine and p=reject as the report data allows.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7489
+    tags: [anti-spoofing]
+
+  - id: EMAIL-DMARC-002
+    title: DMARC policy is monitoring only (p=none)
+    logic: email_dmarc_no_enforcement
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      The DMARC policy is p=none. Reports are collected, but spoofed mail is not
+      rejected, so the domain can still be used for phishing.
+    recommendation: >
+      Review the aggregate reports, confirm all legitimate senders authenticate,
+      then raise the policy to p=quarantine and finally p=reject.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7489#section-6.3
+    tags: [anti-spoofing]
+
+  - id: EMAIL-DMARC-003
+    title: DMARC enforcement is partial
+    logic: email_dmarc_partial
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      The policy is enforced for only part of the mail (pct below 100) or exempted
+      for subdomains (sp=none while p is enforcing). Attackers target the
+      unenforced remainder.
+    recommendation: >
+      Raise pct to 100 once the reports are clean, and align sp with p unless a
+      specific subdomain genuinely needs different handling.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7489#section-6.3
+    tags: [anti-spoofing]
+
+  - id: EMAIL-DMARC-004
+    title: DMARC has no reporting address
+    logic: email_dmarc_no_reporting
+    severity: LOW
+    confidence: HIGH
+    description: >
+      The DMARC record has no rua tag, so no aggregate reports are delivered. You
+      cannot see who is sending mail as the domain, which makes raising the policy
+      a guess.
+    recommendation: >
+      Add a rua address, ideally a service that parses DMARC reports.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7489#section-6.2
+    tags: [visibility]
+
+  - id: EMAIL-DKIM-001
+    title: DKIM key is weak or revoked
+    logic: email_dkim_weak_key
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      A DKIM key published at one of the tested selectors is smaller than 2048
+      bits, or has an empty p= tag which marks it revoked.
+    recommendation: >
+      Publish a 2048-bit key under a new selector, update the signing service to
+      use it, then remove the old selector.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc6376#section-3.6.1
+    tags: [cryptography]
+
+  - id: EMAIL-MTA-STS-001
+    title: MTA-STS not deployed
+    logic: email_no_mta_sts
+    severity: LOW
+    confidence: MEDIUM
+    description: >
+      The domain receives mail (MX records exist) but publishes no MTA-STS policy.
+      Without it, an attacker who can influence DNS or the network path can
+      downgrade SMTP to plaintext or redirect it.
+    recommendation: >
+      Publish a _mta-sts TXT record and host the policy at
+      https://mta-sts.<domain>/.well-known/mta-sts.txt, starting in testing mode.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc8461
+    tags: [transport-security]
+
+  - id: EMAIL-MX-001
+    title: Null MX without a matching SPF rejection
+    logic: email_null_mx_without_rejection
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      The zone publishes a null MX (priority 0, empty exchange) which says the
+      domain accepts no mail, but SPF does not end in '-all'. RFC 7505 requires
+      both, otherwise receivers may still accept mail for the domain.
+    recommendation: >
+      Publish 'v=spf1 -all' alongside the null MX record.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc7505
+    tags: [anti-spoofing]

@@ -373,7 +373,12 @@ class DMARCParser:
         record.evidence = _evidence(f"TXT _dmarc.{normalized}", result)
         text = _first_prefixed(result, "v=dmarc1")
         if text:
-            return self.parse(normalized, text)
+            parsed = self.parse(normalized, text)
+            # parse() builds a fresh model, so the query evidence collected above
+            # has to be carried across or findings about DMARC would have nothing
+            # to point at.
+            parsed.evidence = record.evidence
+            return parsed
 
         # Inherit from the organizational domain (RFC 7489 section 3).
         parent = parent_domain(normalized)
@@ -692,8 +697,10 @@ def _evidence(query: str, result: Any) -> Evidence:
         return Evidence(query=query, response="no result", source=SourceRecord(provider="dns"))
     if result.ok:
         response = f"{result.status}/{result.answer_count}"
-        if result.records:
-            response += ": " + "; ".join(item.rdata_text for item in result.records[:3])
+        # data_records only: with DO set the answer also carries RRSIG records,
+        # and signature text is not the data a reader wants to see.
+        if result.data_records:
+            response += ": " + "; ".join(item.rdata_text for item in result.data_records[:3])
     else:
         response = f"{result.status}" + (f" ({result.error})" if result.error else "")
     return Evidence(

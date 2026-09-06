@@ -1,0 +1,92 @@
+# DNSSEC rules.
+#
+# These rules only ever report what was observed in DNS. DNScope never claims a
+# zone is secure because a resolver did not complain: absence of evidence is
+# reported as "unknown", not as "valid".
+category: dnssec
+
+rules:
+  - id: DNSSEC-001
+    title: Zone is not signed with DNSSEC
+    logic: dnssec_missing
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      The zone publishes no DNSKEY records, so a resolver has no way to verify
+      that the answers it received came from the real authoritative server.
+      Cache poisoning and on-path tampering cannot be detected by the client.
+    recommendation: >
+      Enable DNSSEC signing at the registrar or DNS provider, then publish the DS
+      record in the parent zone. Verify with a validating resolver before relying
+      on it.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc4033
+      - https://datatracker.ietf.org/doc/html/rfc4034
+      - https://datatracker.ietf.org/doc/html/rfc6840
+    tags: [authentication]
+
+  - id: DNSSEC-002
+    title: Zone has keys but no DS record in the parent
+    logic: dnssec_no_ds
+    severity: HIGH
+    confidence: MEDIUM
+    description: >
+      The zone publishes DNSKEY records but the parent zone has no DS record. The
+      chain of trust is broken, so validators treat the zone as insecure even
+      though the work of signing it has been done.
+    recommendation: >
+      Publish the DS record provided by the DNS provider at the registrar. Until
+      it propagates, the zone remains unvalidated.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc4034#section-5
+      - https://datatracker.ietf.org/doc/html/rfc8078
+    tags: [authentication, delegation]
+
+  - id: DNSSEC-003
+    title: Deprecated DNSSEC algorithm in use
+    logic: dnssec_weak_algorithm
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      One of the zone's keys uses an algorithm that has been deprecated because
+      its hash or signature scheme is no longer considered safe.
+    recommendation: >
+      Rotate to algorithm 8 (RSA/SHA-256), 13 (ECDSA P-256/SHA-256), 14 (ECDSA
+      P-384/SHA-384) or 15 (Ed25519), then remove the old key after it has aged
+      out of caches.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc8624
+      - https://www.iana.org/assignments/dns-sec-alg-numbers/dns-sec-alg-numbers.xhtml
+    tags: [cryptography]
+
+  - id: DNSSEC-004
+    title: DNSSEC signature has expired
+    logic: dnssec_rrsig_expired
+    severity: HIGH
+    confidence: HIGH
+    description: >
+      One or more RRSIG records are past their expiry date. Validating resolvers
+      will return SERVFAIL for the affected record types, which breaks resolution
+      for clients that validate.
+    recommendation: >
+      Re-sign the zone immediately. If the zone is signed automatically, check why
+      the re-signing job did not run.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc4034#section-3
+    tags: [availability, cryptography]
+
+  - id: DNSSEC-005
+    title: RSA zone key smaller than 2048 bits
+    logic: dnssec_key_too_small
+    severity: MEDIUM
+    confidence: HIGH
+    description: >
+      An RSA key used to sign the zone is smaller than 2048 bits. Keys of that
+      size are below current guidance for anything that must remain trustworthy
+      for years.
+    recommendation: >
+      Publish a new key of at least 2048 bits (or move to ECDSA/Ed25519), then
+      retire the small key once it is no longer referenced by any RRSIG.
+    references:
+      - https://datatracker.ietf.org/doc/html/rfc8624
+    tags: [cryptography]
