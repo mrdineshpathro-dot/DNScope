@@ -23,6 +23,15 @@ class ChangeType:
     SOA_CHANGED = "SOA_CHANGED"
     DNSSEC_CHANGED = "DNSSEC_CHANGED"
     TTL_CHANGED = "TTL_CHANGED"
+    #: Record types without a dedicated change type (SRV, NAPTR, TLSA, SSHFP...).
+    RECORD_CHANGED = "RECORD_CHANGED"
+    #: Mail-authentication policy changes, tracked separately from generic TXT so
+    #: a weakened SPF or DMARC policy is never rated as an ordinary text edit.
+    SPF_CHANGED = "SPF_CHANGED"
+    DMARC_CHANGED = "DMARC_CHANGED"
+    DKIM_CHANGED = "DKIM_CHANGED"
+    #: MTA-STS / TLS-RPT.
+    TRANSPORT_POLICY_CHANGED = "TRANSPORT_POLICY_CHANGED"
     CERTIFICATE_ADDED = "CERTIFICATE_ADDED"
     CERTIFICATE_REMOVED = "CERTIFICATE_REMOVED"
     CERTIFICATE_EXPIRED = "CERTIFICATE_EXPIRED"
@@ -54,6 +63,11 @@ class ChangeType:
         SOA_CHANGED,
         DNSSEC_CHANGED,
         TTL_CHANGED,
+        RECORD_CHANGED,
+        SPF_CHANGED,
+        DMARC_CHANGED,
+        DKIM_CHANGED,
+        TRANSPORT_POLICY_CHANGED,
         CERTIFICATE_ADDED,
         CERTIFICATE_REMOVED,
         CERTIFICATE_EXPIRED,
@@ -79,7 +93,16 @@ class ChangeType:
     RESOLUTION = (A_CHANGED, AAAA_CHANGED, CNAME_CHANGED, MX_CHANGED, NS_CHANGED, SOA_CHANGED)
 
     #: Changes affecting security posture.
-    SECURITY = (DNSSEC_CHANGED, CAA_CHANGED, CERTIFICATE_EXPIRED, DANGLING_DETECTED)
+    SECURITY = (
+        DNSSEC_CHANGED,
+        CAA_CHANGED,
+        CERTIFICATE_EXPIRED,
+        DANGLING_DETECTED,
+        SPF_CHANGED,
+        DMARC_CHANGED,
+        DKIM_CHANGED,
+        TRANSPORT_POLICY_CHANGED,
+    )
 
     #: Changes considered informational by default.
     INFORMATIONAL = (TTL_CHANGED, HEALTH_SCORE_CHANGED)

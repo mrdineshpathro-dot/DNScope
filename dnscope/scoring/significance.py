@@ -171,6 +171,163 @@ def _security_txt_weakened(previous: Any, current: Any) -> str:
     return ""
 
 
+#: SPF 'all' qualifiers ordered strictest -> most permissive.
+_SPF_ALL_RANK = {"-": 0, "~": 1, "?": 2, "+": 3, "none": 4}
+
+
+def _rule_spf_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
+    """SPF policy changes tracked field by field.
+
+    A snapshot stores SPF as individual fields (``spf_all``, ``spf_includes``),
+    so the weakening check has to work on those values rather than on a whole
+    record string.
+    """
+    field = str(change.field or "")
+    if field == "spf_all":
+        before = str(_scalar(change.previous)).strip()
+        after = str(_scalar(change.current)).strip()
+        if before and not after:
+            return Significance.HIGH.value, "the SPF 'all' mechanism was removed"
+        if not before and after:
+            return Significance.MEDIUM.value, f"an SPF 'all' mechanism was added ({after})"
+        before_rank = _SPF_ALL_RANK.get(before.rstrip("all") or "none", 4)
+        after_rank = _SPF_ALL_RANK.get(after.rstrip("all") or "none", 4)
+        if after_rank > before_rank:
+            return Significance.CRITICAL.value, f"SPF 'all' qualifier weakened ({before} -> {after})"
+        if after_rank < before_rank:
+            return Significance.TRIVIAL.value, f"SPF 'all' qualifier tightened ({before} -> {after})"
+        return Significance.LOW.value, "SPF 'all' qualifier changed"
+    if field == "spf_found":
+        if change.previous and not change.current:
+            return Significance.CRITICAL.value, "the SPF record was removed"
+        if not change.previous and change.current:
+            return Significance.MEDIUM.value, "an SPF record was published"
+        return Significance.LOW.value, "SPF presence changed"
+    if field == "spf_includes":
+        before = {str(item) for item in _as_list(change.previous)}
+        after = {str(item) for item in _as_list(change.current)}
+        if before and not after:
+            return Significance.HIGH.value, "every SPF include was removed"
+        if after - before:
+            return Significance.MEDIUM.value, f"SPF include added ({', '.join(sorted(after - before))})"
+        if before - after:
+            return Significance.LOW.value, f"SPF include removed ({', '.join(sorted(before - after))})"
+        return Significance.TRIVIAL.value, "SPF include list reordered"
+    if field == "spf_lookups":
+        before = _to_float(change.previous)
+        after = _to_float(change.current)
+        if before is not None and after is not None and after >= 10 > before:
+            return Significance.HIGH.value, f"SPF reached the RFC 7208 lookup limit ({before:.0f} -> {after:.0f})"
+        return Significance.TRIVIAL.value, "SPF lookup count changed"
+    return None
+
+
+def _rule_dmarc_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
+    """DMARC policy changes tracked field by field."""
+    field = str(change.field or "")
+    if field == "dmarc_policy":
+        before = str(_scalar(change.previous) or "").lower()
+        after = str(_scalar(change.current) or "").lower()
+        if before in _DMARC_ENFORCEMENT and after in _DMARC_ENFORCEMENT:
+            if _DMARC_ENFORCEMENT.index(after) < _DMARC_ENFORCEMENT.index(before):
+                return Significance.CRITICAL.value, f"DMARC enforcement weakened (p={before} -> p={after})"
+            if _DMARC_ENFORCEMENT.index(after) > _DMARC_ENFORCEMENT.index(before):
+                return Significance.MEDIUM.value, f"DMARC enforcement strengthened (p={before} -> p={after})"
+        if before and not after:
+            return Significance.CRITICAL.value, "the DMARC policy value was removed"
+        return Significance.HIGH.value, "DMARC policy changed"
+    if field == "dmarc_found":
+        if change.previous and not change.current:
+            return Significance.CRITICAL.value, "the DMARC record was removed"
+        if not change.previous and change.current:
+            return Significance.MEDIUM.value, "a DMARC record was published"
+        return Significance.LOW.value, "DMARC presence changed"
+    if field == "dmarc_subdomain_policy":
+        before = str(_scalar(change.previous) or "").lower()
+        after = str(_scalar(change.current) or "").lower()
+        if after == "none" and before in ("quarantine", "reject"):
+            return Significance.HIGH.value, f"subdomains were exempted from DMARC (sp={before} -> sp=none)"
+        if before == "none" and after in ("quarantine", "reject"):
+            return Significance.MEDIUM.value, f"subdomain DMARC enforcement added (sp={after})"
+        return Significance.MEDIUM.value, "DMARC subdomain policy changed"
+    if field == "dmarc_pct":
+        before = _to_float(change.previous)
+        after = _to_float(change.current)
+        if before is None and after is not None and after < 100:
+            return Significance.HIGH.value, f"DMARC coverage reduced to {after:.0f}%"
+        if before is not None and after is not None and after < before:
+            return Significance.HIGH.value, f"DMARC coverage reduced ({before:.0f}% -> {after:.0f}%)"
+        if before is not None and after is not None and after > before:
+            return Significance.TRIVIAL.value, f"DMARC coverage raised ({before:.0f}% -> {after:.0f}%)"
+        return Significance.LOW.value, "DMARC percentage changed"
+    if field == "dmarc_rua":
+        before = {str(item) for item in _as_list(change.previous)}
+        after = {str(item) for item in _as_list(change.current)}
+        if before and not after:
+            return Significance.MEDIUM.value, "DMARC reporting was disabled (rua removed)"
+        if not before and after:
+            return Significance.TRIVIAL.value, "DMARC reporting was enabled"
+        return Significance.TRIVIAL.value, "DMARC report address changed"
+    return None
+
+
+def _rule_dkim_field(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
+    """DKIM selector/key set changes."""
+    before = {str(item) for item in _as_list(change.previous)}
+    after = {str(item) for item in _as_list(change.current)}
+    if before and not after:
+        return Significance.HIGH.value, "no DKIM keys are published at the tested selectors any more"
+    if not before and after:
+        return Significance.MEDIUM.value, "DKIM keys appeared at the tested selectors"
+    removed = before - after
+    added = after - before
+    if removed:
+        return Significance.MEDIUM.value, f"DKIM selector set changed (removed: {', '.join(sorted(removed))})"
+    if added:
+        return Significance.TRIVIAL.value, f"DKIM selector added ({', '.join(sorted(added))})"
+    return Significance.TRIVIAL.value, "DKIM selector list changed"
+
+
+def _rule_transport_policy(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
+    """MTA-STS and TLS-RPT changes."""
+    field = str(change.field or "")
+    if field == "mta_sts_found" or field == "tls_rpt_found":
+        label = "MTA-STS" if field.startswith("mta_sts") else "TLS-RPT"
+        if change.previous and not change.current:
+            return Significance.HIGH.value, f"the {label} record was removed"
+        if not change.previous and change.current:
+            return Significance.TRIVIAL.value, f"a {label} record was published"
+        return Significance.LOW.value, f"{label} presence changed"
+    if field == "mta_sts_mode":
+        # An empty mode and an explicit "none" both mean "not enforced", so they
+        # are normalized together before comparing - otherwise publishing a
+        # policy in none mode would read as a strengthening.
+        before = str(_scalar(change.previous) or "").lower() or "none"
+        after = str(_scalar(change.current) or "").lower() or "none"
+        before_index = _MTA_STS_MODES.index(before) if before in _MTA_STS_MODES else 1
+        after_index = _MTA_STS_MODES.index(after) if after in _MTA_STS_MODES else 1
+        if after_index < before_index:
+            return Significance.CRITICAL.value, f"MTA-STS enforcement weakened (mode={before} -> mode={after})"
+        if after_index > before_index:
+            return Significance.TRIVIAL.value, f"MTA-STS enforcement strengthened (mode={after})"
+        return Significance.TRIVIAL.value, "MTA-STS mode changed"
+    return None
+
+
+def _scalar(value: Any) -> Any:
+    """First element of a list payload, or the value itself."""
+    items = _as_list(value)
+    return items[0] if len(items) == 1 and not isinstance(value, (str, bytes)) else value
+
+
+def _to_float(value: Any) -> float | None:
+    """Numeric coercion that returns ``None`` instead of raising."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def _mx_provider_changed(previous: Any, current: Any) -> bool:
     """Detect a mail-provider change (different MX domain)."""
     from dnscope.utils.domains import registered_domain
@@ -189,17 +346,44 @@ def _mx_provider_changed(previous: Any, current: Any) -> bool:
 
 
 def _rule_a_record(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
-    """A/AAAA changes: same network is boring, a new network is interesting."""
-    if _same_network(change.previous, change.current):
+    """A/AAAA changes: same network is boring, a new network is interesting.
+
+    The comparison is per added address, not per set. If one address stays put
+    while another moves to a network that was never used before, that is a new
+    network - and exactly the change an operator needs to see.
+    """
+    import ipaddress
+
+    def network_of(value: Any) -> str | None:
+        """Return the containing network of ``value`` (/24 for IPv4, /48 for IPv6)."""
+        try:
+            address = ipaddress.ip_address(str(value))
+        except ValueError:
+            return None
+        width = 24 if address.version == 4 else 48
+        return str(ipaddress.ip_network(f"{address}/{width}", strict=False).network_address)
+
+    previous = _as_list(change.previous)
+    current = _as_list(change.current)
+    added, removed = _added_removed(previous, current)
+    if not added and not removed:
+        return Significance.TRIVIAL.value, "address set reordered"
+    known = {found for found in (network_of(value) for value in previous) if found}
+    novel = [
+        str(value)
+        for value in sorted(added)
+        if (found := network_of(value)) is not None and found not in known
+    ]
+    if novel:
+        return (
+            Significance.HIGH.value,
+            f"resolution added address(es) in a network never seen before: {', '.join(novel[:4])}",
+        )
+    if added and not novel:
         return Significance.TRIVIAL.value, "address changed within the same network block"
-    added, removed = _added_removed(change.previous, change.current)
-    if added and removed:
-        return Significance.HIGH.value, "resolution moved to a different network"
-    if added and not removed:
-        return Significance.MEDIUM.value, "additional address added"
     if removed and not added:
-        return Significance.MEDIUM.value, "address removed"
-    return None
+        return Significance.MEDIUM.value, f"address(es) removed: {', '.join(sorted(removed)[:4])}"
+    return Significance.LOW.value, "address set changed"
 
 
 def _rule_ns(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
@@ -281,14 +465,37 @@ def _rule_dnssec(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, st
 
 
 def _rule_ttl(change: ChangeRecord, context: dict[str, Any]) -> tuple[str, str] | None:
-    """TTL changes are informational unless they drop dramatically."""
-    try:
-        before = float(_as_list(change.previous)[0])
-        after = float(_as_list(change.current)[0])
-    except (ValueError, TypeError, IndexError):
+    """TTL changes are informational unless they drop dramatically.
+
+    Snapshots store TTLs as ``{record_type: ttl}``, so each type is compared on
+    its own; a single sharp drop anywhere is enough to be worth mentioning.
+    """
+    def pairs(previous: Any, current: Any) -> list[tuple[str, float, float]]:
+        """Yield (label, before, after) triples from either shape of payload."""
+        if isinstance(previous, dict) or isinstance(current, dict):
+            before_map = previous if isinstance(previous, dict) else {}
+            after_map = current if isinstance(current, dict) else {}
+            found: list[tuple[str, float, float]] = []
+            for key in sorted(set(before_map) | set(after_map)):
+                low = _to_float(before_map.get(key))
+                high = _to_float(after_map.get(key))
+                if low is not None and high is not None:
+                    found.append((str(key), low, high))
+            return found
+        low = _to_float(_scalar(previous))
+        high = _to_float(_scalar(current))
+        return [("TTL", low, high)] if low is not None and high is not None else []
+
+    compared = pairs(change.previous, change.current)
+    if not compared:
         return Significance.TRIVIAL.value, "TTL changed"
-    if before and after and after < before / 10:
-        return Significance.LOW.value, f"TTL dropped sharply ({before:.0f}s -> {after:.0f}s)"
+    drops = [(label, low, high) for label, low, high in compared if low > 0 and high < low / 10]
+    if drops:
+        label, low, high = min(drops, key=lambda item: item[2] / item[1])
+        return (
+            Significance.LOW.value,
+            f"TTL for {label} dropped sharply ({low:.0f}s -> {high:.0f}s)",
+        )
     return Significance.TRIVIAL.value, "TTL changed (normal cache behaviour)"
 
 
@@ -331,6 +538,14 @@ DEFAULT_RULES: tuple[SignificanceRule, ...] = (
                      "hosting ASN changed", priority=5),
     SignificanceRule("SIG-CLOUD-001", (ChangeType.CLOUD_PROVIDER_CHANGED,), Significance.MEDIUM.value,
                      "cloud/CDN provider changed", priority=5),
+    SignificanceRule("SIG-SPF-001", (ChangeType.SPF_CHANGED,), Significance.MEDIUM.value,
+                     "SPF policy changed", predicate=_rule_spf_field, priority=12),
+    SignificanceRule("SIG-DMARC-001", (ChangeType.DMARC_CHANGED,), Significance.MEDIUM.value,
+                     "DMARC policy changed", predicate=_rule_dmarc_field, priority=12),
+    SignificanceRule("SIG-DKIM-001", (ChangeType.DKIM_CHANGED,), Significance.MEDIUM.value,
+                     "DKIM key set changed", predicate=_rule_dkim_field, priority=12),
+    SignificanceRule("SIG-TRANSPORT-001", (ChangeType.TRANSPORT_POLICY_CHANGED,), Significance.MEDIUM.value,
+                     "mail transport policy changed", predicate=_rule_transport_policy, priority=12),
     SignificanceRule("SIG-SUB-ADDED-001", (ChangeType.SUBDOMAIN_ADDED,), Significance.LOW.value,
                      "new subdomain discovered", priority=1),
     SignificanceRule("SIG-SUB-REMOVED-001", (ChangeType.SUBDOMAIN_REMOVED,), Significance.LOW.value,
