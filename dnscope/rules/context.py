@@ -196,7 +196,7 @@ class ScanContext(SchemaVersioned):
             source=SourceRecord(
                 provider=provider,
                 source=source or self.resolver or provider,
-                observed_at=utc_now_iso(),
+                observed_at=now_utc(),
                 confidence=Confidence.coerce(confidence),
                 quality=EvidenceQuality.coerce(quality),
             ),

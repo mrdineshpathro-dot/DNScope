@@ -107,11 +107,11 @@ class BudgetTracker:
     def total_requests(self, providers: Iterable[str] | None = None) -> int:
         """Total requests sent, optionally filtered by provider."""
         with self._lock:
-            items = self._budgets.values()
+            selected: list[ProviderBudget] = list(self._budgets.values())
             if providers is not None:
                 allowed = {p.lower() for p in providers}
-                items = [b for name, b in self._budgets.items() if name.lower() in allowed]
-            return sum(budget.requests for budget in items)
+                selected = [b for name, b in self._budgets.items() if name.lower() in allowed]
+            return sum(budget.requests for budget in selected)
 
     def summary(self) -> dict[str, Any]:
         """Aggregate view used by ``dnscope providers`` and ``/metrics``."""

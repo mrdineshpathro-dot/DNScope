@@ -184,7 +184,9 @@ class DiscoveryPipeline:
 
         gatherer = BoundedGatherer(concurrency=min(self.concurrency, max(1, len(enabled))), name="discovery")
         if enabled:
-            outcomes = run_async(gatherer.map(self._run_source, enabled))
+            # map() calls its function with a single argument, so the domain has
+            # to be bound here rather than passed as a second parameter.
+            outcomes = run_async(gatherer.map(lambda source: self._run_source(source, domain), enabled))
             for outcome in outcomes:
                 if isinstance(outcome, GatherError):
                     statuses.append(
@@ -232,13 +234,14 @@ class DiscoveryPipeline:
 
     def _resolve(self, hostnames: Sequence[str]) -> dict[str, dict[str, Any]]:
         """Resolve hostnames with bounded concurrency."""
-        if self.engine is None:
+        engine = self.engine
+        if engine is None:
             return {}
         gatherer = BoundedGatherer(concurrency=self.concurrency, rate=self.rate_limit, name="discovery-dns")
 
         def _work(hostname: str) -> tuple[str, dict[str, Any]]:
-            a_result = self.engine.query(hostname, "A")
-            cname_result = self.engine.query(hostname, "CNAME") if not a_result.answer_count else None
+            a_result = engine.query(hostname, "A")
+            cname_result = engine.query(hostname, "CNAME") if not a_result.answer_count else None
             info: dict[str, Any] = {
                 "status": a_result.status,
                 "ips": sorted(a_result.rdata_set()),

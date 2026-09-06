@@ -75,8 +75,8 @@ def setup_logging(
 
         _CONFIGURED = True
     else:
-        for handler in logger.handlers:
-            handler.setLevel(level)
+        for existing in logger.handlers:
+            existing.setLevel(level)
 
 
 def get_logger(name: str) -> logging.Logger:

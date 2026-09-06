@@ -24,7 +24,13 @@ from pydantic import Field
 from dnscope.analyzers.cloud import CloudDetector
 from dnscope.dns.engine import DNSEngine
 from dnscope.models.assets import IPRecord
-from dnscope.models.common import Confidence, EvidenceQuality, SchemaVersioned, SourceRecord
+from dnscope.models.common import (
+    Confidence,
+    EvidenceQuality,
+    SchemaVersioned,
+    ScopeStatus,
+    SourceRecord,
+)
 from dnscope.providers.base import ProviderContext
 from dnscope.providers.registry import ProviderRegistry
 from dnscope.utils.domains import (
@@ -37,7 +43,7 @@ from dnscope.utils.domains import (
     reverse_pointer,
 )
 from dnscope.utils.logging import get_logger
-from dnscope.utils.time_utils import utc_now_iso
+from dnscope.utils.time_utils import now_utc, utc_now_iso
 
 _log = get_logger("intelligence.ip")
 
@@ -221,7 +227,7 @@ class IPIntelligenceEngine:
             record = IPRecord(value=address, ip=address, label=address)
             record.version = 6 if ":" in address else 4
             risk = AddressRisk(ip=address)
-            record.scope_status = "OUT_OF_SCOPE" if is_private_ip(address) else "IN_SCOPE"
+            record.scope_status = ScopeStatus.OUT_OF_SCOPE if is_private_ip(address) else ScopeStatus.IN_SCOPE
 
             self._apply_asn(record, risk, provider, context, report)
             self._apply_ptr(record, risk, address)
@@ -232,7 +238,7 @@ class IPIntelligenceEngine:
                 SourceRecord(
                     provider=self.asn_provider if record.asn else "dns",
                     source="origin.asn.cymru.com" if record.asn else "PTR",
-                    observed_at=utc_now_iso(),
+                    observed_at=now_utc(),
                     confidence=record.confidence,
                     quality=record.quality,
                 )
@@ -330,6 +336,9 @@ class IPIntelligenceEngine:
         if not self.resolve_ptr or self.engine is None:
             return
         name = reverse_pointer(address)
+        if not name:
+            risk.ptr_missing = True
+            return
         result = self.engine.query(name, "PTR")
         if not result.ok:
             risk.ptr_missing = True

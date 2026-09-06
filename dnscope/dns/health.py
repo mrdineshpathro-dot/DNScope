@@ -261,7 +261,7 @@ class DNSHealthAnalyzer:
         report = DNSHealthReport(target=target)
         report.health = self._health(target, answer, rdap=rdap)
         report.reliability = self._reliability(
-            target, answer, nameserver_profiles or [], resolver_consistency
+            target, answer, list(nameserver_profiles or []), resolver_consistency
         )
         report.security = self._security(target, answer, dnssec or {}, email or {})
         report.compute_overall()

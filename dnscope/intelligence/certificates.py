@@ -73,11 +73,12 @@ class CertificateReport(SchemaVersioned):
 
     def expired(self) -> list[CertificateInfo]:
         """Certificates whose validity has ended."""
-        return [
-            certificate
-            for certificate in self.certificates
-            if (certificate.days_until_expiry() is not None and certificate.days_until_expiry() < 0)
-        ]
+        found: list[CertificateInfo] = []
+        for certificate in self.certificates:
+            remaining = certificate.days_until_expiry()
+            if remaining is not None and remaining < 0:
+                found.append(certificate)
+        return found
 
     def weak(self) -> list[dict[str, Any]]:
         """Certificates with weak key material or signature algorithms."""
@@ -233,6 +234,11 @@ class CertificateSetChange(SchemaVersioned):
         )
 
 
+def _iso(moment: Any) -> str:
+    """ISO-format a datetime, or ``""`` when there is none."""
+    return moment.isoformat() if hasattr(moment, "isoformat") else ""
+
+
 class CertificateEngine:
     """Collects certificates from CT logs and (optionally) live TLS."""
 
@@ -311,9 +317,7 @@ class CertificateEngine:
                         "fingerprint": identity,
                         "issuer": certificate.issuer_cn,
                         "previous": {
-                            "not_after": (
-                                prior.not_after.isoformat() if getattr(prior, "not_after", None) else ""
-                            ),
+                            "not_after": _iso(getattr(prior, "not_after", None)),
                             "issuer": getattr(prior, "issuer_cn", ""),
                         },
                         "current": {

@@ -269,7 +269,7 @@ class RDAPClient:
         data.source = SourceRecord(
             provider=result.source.provider or provider.name,
             source=result.source.source or getattr(provider, "base_url", ""),
-            observed_at=result.source.observed_at or utc_now_iso(),
+            observed_at=result.source.observed_at or now_utc(),
             confidence=result.confidence,
             quality=result.quality,
         )

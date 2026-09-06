@@ -1979,7 +1979,7 @@ def _row_to_dict(row: sqlite3.Row | None, *, json_fields: Sequence[str] = ()) ->
     data = dict(row)
     for field in json_fields:
         if field in data:
-            default = (
+            default: Any = (
                 [] if field in ("sources", "ips", "sans", "prefixes", "ptr", "references", "tags") else {}
             )
             data[field] = _loads(data[field], default)

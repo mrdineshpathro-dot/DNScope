@@ -26,7 +26,7 @@ from dnscope.providers.registry import ProviderRegistry
 from dnscope.security.validators import coerce_str, coerce_str_list
 from dnscope.utils.domains import is_ip_literal, normalize_hostname
 from dnscope.utils.logging import get_logger
-from dnscope.utils.time_utils import utc_now_iso
+from dnscope.utils.time_utils import now_utc, utc_now_iso
 
 _log = get_logger("intelligence.threat")
 
@@ -292,7 +292,7 @@ class ThreatIntelligence:
             source=SourceRecord(
                 provider=provider.name,
                 source=provider.name,
-                observed_at=utc_now_iso(),
+                observed_at=now_utc(),
                 confidence=Confidence.MEDIUM,
                 quality=EvidenceQuality.CORRELATED,
             ),
@@ -308,7 +308,7 @@ class ThreatIntelligence:
         indicator.source = SourceRecord(
             provider=result.source.provider or provider.name,
             source=result.source.source or provider.name,
-            observed_at=result.source.observed_at or utc_now_iso(),
+            observed_at=result.source.observed_at or now_utc(),
             confidence=result.confidence,
             quality=EvidenceQuality.CORRELATED,
         )

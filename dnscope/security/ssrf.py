@@ -247,7 +247,7 @@ def _resolve_host(host: str, *, timeout: float = 5.0) -> list[str]:
         infos = socket.getaddrinfo(host, None)
     finally:
         socket.setdefaulttimeout(previous)
-    return sorted({info[4][0] for info in infos})
+    return sorted({str(info[4][0]) for info in infos})
 
 
 #: Default validator instance matching DNScope's safe defaults.

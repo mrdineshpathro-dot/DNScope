@@ -315,6 +315,18 @@ class SecurityConfig(BaseModel):
         return self
 
 
+_ALERT_DEFAULT_EVENTS = (
+    "DNS_CHANGE",
+    "CERTIFICATE_CHANGE",
+    "NS_CHANGE",
+    "MX_CHANGE",
+    "SECURITY_FINDING",
+    "TAKEOVER_INDICATOR",
+    "POLICY_VIOLATION",
+    "PROVIDER_FAILURE",
+)
+
+
 class AlertsConfig(BaseModel):
     """Notification engine configuration."""
 
@@ -347,18 +359,6 @@ class AlertsConfig(BaseModel):
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
-
-
-_ALERT_DEFAULT_EVENTS = (
-    "DNS_CHANGE",
-    "CERTIFICATE_CHANGE",
-    "NS_CHANGE",
-    "MX_CHANGE",
-    "SECURITY_FINDING",
-    "TAKEOVER_INDICATOR",
-    "POLICY_VIOLATION",
-    "PROVIDER_FAILURE",
-)
 
 
 class MonitoringConfig(BaseModel):

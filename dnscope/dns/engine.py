@@ -202,7 +202,7 @@ class DNSEngine:
         want_dnssec: bool | None,
     ) -> DNSQueryResult:
         """Send a query with retry/backoff across the configured resolvers."""
-        targets = [resolver] if resolver else (self.nameservers or [None])
+        targets: list[str | None] = [resolver] if resolver else (list(self.nameservers) or [None])
         attempts_allowed = max(1, self.config.retries + 1)
         last_error = ""
         for attempt in range(attempts_allowed):
@@ -885,7 +885,7 @@ def _response_from_exception(exc: Any, qname: Any, rdtype: str, rcode: int) -> A
             except TypeError:  # pragma: no cover - defensive
                 break
     message = dns.message.make_query(qname, rdtype)
-    message.set_rcode(rcode)
+    message.set_rcode(dns.rcode.Rcode(rcode))
     return message
 
 

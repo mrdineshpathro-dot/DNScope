@@ -244,7 +244,11 @@ class CertificateAsset(Asset):
     not_before: str = ""
     not_after: str = ""
     expired: bool = False
-    source: str = "ct"
+    #: Where the certificate observation came from: ``ct`` | ``tls`` | ``provider``.
+    #: Named ``origin`` because ``Observation.source`` already holds the
+    #: :class:`SourceRecord` provenance, and shadowing it with a string would
+    #: break anything reading ``asset.source.provider``.
+    origin: str = "ct"
 
     @property
     def identity(self) -> str:

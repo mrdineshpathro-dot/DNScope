@@ -21,7 +21,7 @@ from dnscope.models.providers import (
     ProviderQueryResult,
 )
 from dnscope.providers.base import DiscoveryProvider, Provider, ProviderContext
-from dnscope.security.validators import coerce_str, coerce_str_list
+from dnscope.security.validators import coerce_str, coerce_str_list, list_field
 from dnscope.utils.domains import format_asn, normalize_hostname, valid_hostname
 from dnscope.utils.logging import get_logger
 
@@ -212,7 +212,7 @@ class RdapProvider(Provider):
             result.error = "unexpected RDAP response shape"
             return result
 
-        events = raw.get("events") if isinstance(raw.get("events"), list) else []
+        events = list_field(raw, "events")
         dates: dict[str, str] = {}
         for event in events:
             if not isinstance(event, dict):

@@ -296,9 +296,7 @@ class CensysProvider(ThreatProvider):
             result.error = coerce_str(raw.get("error"), maximum=200) or "no Censys data returned"
             return result
 
-        autonomous_system = (
-            payload.get("autonomous_system") if isinstance(payload.get("autonomous_system"), dict) else {}
-        )
+        autonomous_system = mapping_field(payload, "autonomous_system")
         location = mapping_field(payload, "location")
         services: list[dict[str, Any]] = []
         for service in ensure_bounded(payload.get("services"), maximum=100, name="censys.services"):

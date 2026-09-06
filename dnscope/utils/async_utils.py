@@ -152,17 +152,19 @@ class BoundedGatherer:
         tasks: list[Awaitable[R]] = list(awaitables)
         if len(tasks) > self.max_tasks:
             for task in tasks:
-                task.close()
+                close = getattr(task, "close", None)
+                if callable(close):
+                    close()
             raise LimitsExceeded(
                 f"{self.name}: {len(tasks)} tasks exceeds the limit of {self.max_tasks}",
                 details={"requested": len(tasks), "limit": self.max_tasks},
             )
-        results: list[R | GatherError] = await asyncio.gather(
+        raw_results: list[R | BaseException] = await asyncio.gather(
             *(self._guard(task) for task in tasks),
             return_exceptions=True,
         )
         normalized: list[R | GatherError] = []
-        for item in results:
+        for item in raw_results:
             if isinstance(item, BaseException):
                 normalized.append(GatherError(item))
             else:
@@ -238,7 +240,7 @@ def _run_in_thread(coro: Awaitable[R]) -> R:
     import concurrent.futures
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-        future = pool.submit(asyncio.run, coro)  # type: ignore[arg-type]
+        future: concurrent.futures.Future[Any] = pool.submit(asyncio.run, coro)  # type: ignore[arg-type]
         return future.result()
 
 

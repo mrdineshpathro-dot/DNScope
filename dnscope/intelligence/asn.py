@@ -22,7 +22,7 @@ from dnscope.models.assets import ASNRecord
 from dnscope.models.common import Confidence, EvidenceQuality, SchemaVersioned, SourceRecord
 from dnscope.utils.domains import ASN_ZONE, BOGON_ASNS, format_asn
 from dnscope.utils.logging import get_logger
-from dnscope.utils.time_utils import utc_now_iso
+from dnscope.utils.time_utils import now_utc, utc_now_iso
 
 _log = get_logger("intelligence.asn")
 
@@ -192,7 +192,7 @@ class ASNIntelligenceEngine:
         info.source = SourceRecord(
             provider="team-cymru",
             source=f"{normalized}.{self.zone}",
-            observed_at=utc_now_iso(),
+            observed_at=now_utc(),
             confidence=Confidence.HIGH,
             quality=EvidenceQuality.OBSERVED,
         )
@@ -261,7 +261,7 @@ class ASNIntelligenceEngine:
             info.source = SourceRecord(
                 provider="team-cymru",
                 source=f"origin.asn.cymru.com / {asn}.{self.zone}",
-                observed_at=utc_now_iso(),
+                observed_at=now_utc(),
                 confidence=Confidence.HIGH if info.organization else Confidence.MEDIUM,
                 quality=EvidenceQuality.OBSERVED,
             )
